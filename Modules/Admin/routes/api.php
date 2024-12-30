@@ -36,3 +36,4 @@ Route::get('/sub-phrases/phrases_{id}', [PhrasesController::class, 'subPhrasesAp
 
 Route::get('/grammalogues/language_{id}', [GrammaloguesController::class, 'grammaloguesApi']);
 Route::get('/sub-grammalogues/grammalogue_{id}', [GrammaloguesController::class, 'subGrammaloguesApi']);
+
