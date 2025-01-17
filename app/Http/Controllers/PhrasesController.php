@@ -45,15 +45,31 @@ class PhrasesController extends Controller
     {
         if ($request->isMethod('post')) {
             $request->validate([
-                'letter' => 'required|string|max:255',
-                'wordSections' => 'required|array',
-                'wordSections.*.word' => 'required|string|max:255',
+                'letter' => 'required|string',
+                'sign' => 'nullable|string', 
+                'wordSections' => 'nullable|array',
+                'wordSections.*.word' => 'nullable|string|max:255',
                 'wordSections.*.description' => 'nullable|string',
                 'wordSections.*.signature' => 'nullable|string',
             ]);
 
             $phrase = Phrase::findOrFail($id);
             $phrase->letter = $request->input('letter');
+
+            if ($request->input('sign')) {
+                $imageData = $request->input('sign');
+                $imagePath = public_path("images/phrases/{$phrase->id}_phrase.png");
+                $imageContent = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $imageData));
+                file_put_contents($imagePath, $imageContent);
+                $phrase->sign = "/images/phrases/{$phrase->id}_phrase.png";
+            } elseif ($request->has('clearSign') && $request->clearSign) {
+                $phrase->sign = null;
+                $imagePath = public_path("images/phrases/{$phrase->id}_phrase.png");
+            
+                if (file_exists($imagePath)) {
+                    unlink($imagePath); 
+                }
+            }
             $phrase->save();
 
             $incomingIds = collect($request->input('wordSections'))->pluck('id')->filter()->toArray();
@@ -100,6 +116,7 @@ class PhrasesController extends Controller
             'phrasesData' => [
                 'id' => $phrase->id,
                 'letter' => $phrase->letter,
+                'sign' => $phrase->sign,
                 'wordSections' => $wordSections,
             ],
         ]);
@@ -133,4 +150,22 @@ class PhrasesController extends Controller
         return response()->json($dictation);
     }
     
+    public function SearchByPhrase(Request $request)
+    {
+        $request->validate([
+            'letter' => 'required|string'
+        ]);
+
+        $searchOutline = Phrase::where('letter', $request->letter)->first();
+
+        if (!$searchOutline) {
+            return response()->json([
+                'message' => 'No matching notes found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'search_phrase' => $searchOutline,
+        ], 200);
+    }
 }

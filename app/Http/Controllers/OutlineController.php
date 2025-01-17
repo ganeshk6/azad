@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Outline;
+use App\Models\SearchOutline;
 
 class OutlineController extends Controller
 {
@@ -43,35 +44,75 @@ class OutlineController extends Controller
     public function outlinesEdit(Request $request, $id)
     {
         if ($request->isMethod('post')) {
+
+            $notes = $request->input('notes');
+            if (is_string($notes)) {
+                $notes = json_decode($notes, true);
+            }
+
+            // Validate the notes input
+            if (!is_array($notes)) {
+                return response()->json(['message' => 'Invalid notes format.'], 422);
+            }
+
+            $request->merge(['notes' => $notes]);
+
             $request->validate([
                 'sentence' => 'required|string|max:255',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'image' => 'nullable|string',
+                'notes' => 'nullable|array',
+                'notes.*.notes' => 'nullable|string|max:255',
             ]);
         
             $dictation = Outline::findOrFail($id);
         
-            if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $imageName = $dictation->id . '_outlines.' . $image->getClientOriginalExtension();
-                $imagePath = public_path('images/outlines');
-                $image->move($imagePath, $imageName);
-        
-                $dictation->image = 'images/outlines/' . $imageName;
+            // Handling the image upload if provided
+            if ($request->input('image')) {
+                $imageData = $request->input('image');
+                $imagePath = public_path("images/outlines/{$dictation->id}_outlines.png");
+                $imageContent = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $imageData));
+                file_put_contents($imagePath, $imageContent);
+                $dictation->image = "/images/outlines/{$dictation->id}_outlines.png";
+            } elseif ($request->has('clearSign') && $request->clearSign) {
+                $dictation->image = null;
+                $imagePath = public_path("images/outlines/{$dictation->id}_outlines.png");
+            
+                if (file_exists($imagePath)) {
+                    unlink($imagePath); 
+                }
             }
         
             $dictation->sentence = $request->input('sentence');
             $dictation->save();
         
+            $dictation->OutlineSearch()->delete();
+
+            foreach ($notes as $note) {
+                SearchOutline::create([
+                    'outline_id' => $dictation->id,
+                    'notes' => $note['notes'],
+                ]);
+            }
+        
             return redirect()->route('outlines-edit', ['id' => $dictation->id])
                 ->with('success', 'Outlines updated successfully!');
-        }              
+        }
+                     
         
-        $dictation = Outline::findOrFail($id);
+        $dictation = Outline::with('OutlineSearch')->findOrFail($id);
+        $wordSections = $dictation->OutlineSearch->map(function ($word) {
+            return [
+                'id' => $word->id,
+                'outline_id' => $word->outline_id,
+                'notes' => $word->notes,
+            ];
+        });
 
         $dictationData = [
             'id'=> $dictation->id,
             'sentence'=> $dictation->sentence,
             'image'=> $dictation->image,
+            'notes' => $wordSections,
         ];
 
         // echo "<pre>"; print_r($dictationData); die;
@@ -94,7 +135,7 @@ class OutlineController extends Controller
 
     public function outlinesApi($id)
     {
-        $dictation = Outline::where('language_id', $id)->get();
+        $dictation = Outline::where('language_id', $id)->with('OutlineSearch')->get();
 
         $dictationData = $dictation->map(function ($item) {
             return [
@@ -104,6 +145,38 @@ class OutlineController extends Controller
             ];
         });
 
-        return response()->json($dictationData);
+        return response()->json($dictation);
+    }
+
+    public function SearchOutlinesApi($id)
+    {
+        $dictation = SearchOutline::where('outline_id', $id)->get();
+
+        return response()->json($dictation);
+    }
+    public function SearchBy(Request $request)
+    {
+        $request->validate([
+            'notes' => 'required|string'
+        ]);
+
+        $searchOutline = SearchOutline::where('notes', $request->notes)->first();
+
+        if (!$searchOutline) {
+            return response()->json([
+                'message' => 'No matching notes found.',
+            ], 404);
+        }
+        $outline = Outline::find($searchOutline->outline_id);
+
+        if (!$outline) {
+            return response()->json([
+                'message' => 'Associated outline not found.',
+            ], 404);
+        }
+        return response()->json([
+            'search_outline' => $searchOutline,
+            'outline' => $outline,
+        ], 200);
     }
 }

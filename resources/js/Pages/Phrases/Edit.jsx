@@ -9,6 +9,17 @@ const Edit = ({ phrasesData }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [getPhrase, setPhrase] = useState(phrasesData);
     const [wordSection, setWordSections] = useState(phrasesData.wordSections);
+    const [signWord, setSign] = useState();
+    const [newSign, setNewSign] = useState(phrasesData.sign);
+
+    const handleClear = () => {
+        signWord.clear();
+        setNewSign(null);
+    };
+
+    const handleSave = () => {
+        setNewSign(signWord.getTrimmedCanvas().toDataURL('image/png'));
+    };
 
     const signatureRefs = useRef({});
 
@@ -63,9 +74,14 @@ const Edit = ({ phrasesData }) => {
         setIsLoading(true);
 
         try {
+            const signatureImage = signWord && !signWord.isEmpty()
+                        ? signWord.getTrimmedCanvas().toDataURL('image/png')
+                        : newSign;
+                    setNewSign(signatureImage);
             const response = await axios.post(route('phrases-edit', getPhrase.id), {
                 letter: getPhrase.letter,
                 wordSections: wordSection,
+                sign: signatureImage,
             });
         } catch (error) {
             console.error('Error updating phrases:', error);
@@ -84,7 +100,7 @@ const Edit = ({ phrasesData }) => {
                     <div className="row">
                         <div className="col-10 bg-white shadow-md rounded-lg p-6 relative">
                             <div className="mb-3">
-                                <label htmlFor="wordTitle" className="form-label">Letter Name</label>
+                                <label htmlFor="wordTitle" className="form-label">Phrases Letter Name</label>
                                 <input
                                     id="wordTitle"
                                     type="text"
@@ -95,7 +111,32 @@ const Edit = ({ phrasesData }) => {
                                     onChange={(e) => setPhrase({ ...getPhrase, letter: e.target.value })}
                                 />
                             </div>
-                            <div>
+                            <div className="bg-white shadow-md rounded-lg p-6 relative border-2 mt-3 mb-3">
+                                <label htmlFor="wordSign" className="form-label">Word Signature</label>
+                                {newSign && 
+                                    <img src={`https://azadshorthand.com/admin/public/${newSign}`} alt="Signature" className="my-3" />
+
+                                    }
+                                <SignatureCanvas
+                                    canvasProps={{ className: 'sigCanvas' }}
+                                    ref={(data) => setSign(data)}
+                                />
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary mt-3"
+                                    onClick={handleClear}
+                                >
+                                    Clear sign
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-success mt-3 ms-2"
+                                    onClick={handleSave}
+                                >
+                                    save Sign
+                                </button>
+                            </div>
+                            {/* <div>
                                 <div className='d-flex justify-between mb-3 align-items-center'>
                                     <label className="form-label h5 fw-bold">Word Section</label>
                                     <button
@@ -173,7 +214,9 @@ const Edit = ({ phrasesData }) => {
                                                         <label htmlFor={`signature-${section.id}`} className="form-label">
                                                             Word Signature
                                                         </label>
-                                                        {section.signature && <img src={section.signature} alt="Signature" className="my-3" />}
+                                                        {section.signature && 
+                                                            <img src={`https://azadshorthand.com/admin/public/${section.signature}`} alt="Signature" className="my-3" />
+                                                            }
                                                         <SignatureCanvas
                                                             canvasProps={{ className: 'sigCanvas' }}
                                                             ref={(data) => {
@@ -196,7 +239,7 @@ const Edit = ({ phrasesData }) => {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </div> */}
                         </div>
                         <div className="col-2">
                             <button

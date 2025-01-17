@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\Dictation;
+use App\Models\Contraction;
 
-class DictationController extends Controller
+class ContractionsController extends Controller
 {
-    public function dictation(Request $request)
+    public function contractions(Request $request)
     {
         if ($request->isMethod('post')) {
             $request->validate([
@@ -16,7 +16,7 @@ class DictationController extends Controller
                 'languageId' => 'required|integer|exists:languages,id', 
             ]);
     
-            $dictation = new Dictation();
+            $dictation = new Contraction();
             $dictation->sentence = $request->input('sentence');
             $dictation->language_id = $request->input('languageId');
             $dictation->save(); 
@@ -26,7 +26,7 @@ class DictationController extends Controller
                 'id' => $dictation->id,
             ], 200);
         }
-        return Inertia::render('Dictation/Index');
+        return Inertia::render('Contraction/Index');
     }
     
     public function getWords(Request $request)
@@ -35,63 +35,60 @@ class DictationController extends Controller
             'languageId' => 'required|integer|exists:languages,id', 
         ]);
 
-        $words = Dictation::where('language_id', $request->input('languageId'))->get();
+        $words = Contraction::where('language_id', $request->input('languageId'))->get();
 
         return response()->json($words);
     }
 
-    public function dictationEdit(Request $request, $id)
+    public function contractionsEdit(Request $request, $id)
     {
         if ($request->isMethod('post')) {
             $request->validate([
                 'sentence' => 'required|string|max:255',
                 'image' => 'nullable|string',
-                'link' => 'nullable|string|max:255',
             ]);
         
-            $dictation = Dictation::findOrFail($id);
-        
+            $dictation = Contraction::findOrFail($id);
+            
             if ($request->input('image')) {
                 $imageData = $request->input('image');
-                $imagePath = public_path("images/dictations/{$dictation->id}_dictations.png");
+                $imagePath = public_path("images/contractions/{$dictation->id}_contractions.png");
                 $imageContent = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $imageData));
                 file_put_contents($imagePath, $imageContent);
-                $dictation->image = "/images/dictations/{$dictation->id}_dictations.png";
+                $dictation->image = "/images/contractions/{$dictation->id}_contractions.png";
             } elseif ($request->has('clearSign') && $request->clearSign) {
                 $dictation->image = null;
-                $imagePath = public_path("images/dictations/{$dictation->id}_dictations.png");
+                $imagePath = public_path("images/contractions/{$dictation->id}_contractions.png");
             
                 if (file_exists($imagePath)) {
                     unlink($imagePath); 
                 }
             }
-        
+
             $dictation->sentence = $request->input('sentence');
-            $dictation->link = $request->input('link');
             $dictation->save();
         
-            return redirect()->route('dictation-edit', ['id' => $dictation->id])
-                ->with('success', 'Dictation updated successfully!');
+            return redirect()->route('contractions-edit', ['id' => $dictation->id])
+                ->with('success', 'contractions updated successfully!');
         }              
         
-        $dictation = Dictation::findOrFail($id);
+        $dictation = Contraction::findOrFail($id);
 
         $dictationData = [
             'id'=> $dictation->id,
             'sentence'=> $dictation->sentence,
-            'link'=> $dictation->link,
             'image'=> $dictation->image,
         ];
 
         // echo "<pre>"; print_r($dictationData); die;
-        return Inertia::render('Dictation/Edit', [
+        return Inertia::render('Contraction/Edit', [
             'dictation' => $dictationData
         ]);
     }
 
     public function destroy($id)
     {
-        $word = Dictation::find($id);
+        $word = Contraction::find($id);
 
         if ($word) {
             $word->delete();
@@ -101,19 +98,37 @@ class DictationController extends Controller
         return response()->json(['message' => 'Word not found'], 404);
     }
 
-    public function dictationApi($id)
+    public function contractionsApi($id)
     {
-        $dictation = Dictation::where('language_id', $id)->get();
+        $dictation = Contraction::where('language_id', $id)->get();
 
         $dictationData = $dictation->map(function ($item) {
             return [
                 'id'=> $item->id,
                 'sentence'=> $item->sentence,
-                'link'=> $item->link,
                 'image'=> $item->image,
             ];
         });
 
         return response()->json($dictationData);
+    }
+
+    public function SearchByContractions(Request $request)
+    {
+        $request->validate([
+            'sentence' => 'required|string'
+        ]);
+
+        $searchOutline = Contraction::where('sentence', $request->sentence)->first();
+
+        if (!$searchOutline) {
+            return response()->json([
+                'message' => 'No matching notes found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'search_contraction' => $searchOutline,
+        ], 200);
     }
 }

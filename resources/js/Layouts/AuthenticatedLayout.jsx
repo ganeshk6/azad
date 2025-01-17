@@ -6,19 +6,30 @@ import { useEffect, useState } from 'react';
 
 export default function AuthenticatedLayout({ children }) {
     const user = usePage().props.auth.user;
-    const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState(localStorage.getItem('language') || 'english');
-    const [languageId, setLanguageId] = useState(localStorage.getItem('languageId') || null);
+    const [selectedLanguage, setSelectedLanguage] = useState('please select language');
+    const [languageId, setLanguageId] = useState(localStorage.getItem('languageId'));
 
     useEffect(() => {
-        localStorage.setItem('language', selectedLanguage);
+        // Set the selected language based on localStorage
         if (languageId) {
-            localStorage.setItem('languageId', languageId);
+            const savedLanguage = localStorage.getItem('language');
+            setSelectedLanguage(savedLanguage || 'please select language');
         }
-    }, [selectedLanguage, languageId]);
+    }, [languageId]);
 
     const handleLanguageChange = async (e) => {
         const language = e.target.value;
+
+        if (language === 'please select language') {
+            // Reset language if "please select language" is chosen
+            setSelectedLanguage('please select language');
+            setLanguageId(null);
+            localStorage.removeItem('language');
+            localStorage.removeItem('languageId');
+            window.location.reload();
+            return;
+        }
+
         setSelectedLanguage(language);
 
         try {
@@ -26,18 +37,17 @@ export default function AuthenticatedLayout({ children }) {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                }
+                },
             });
 
-            setLanguageId(response.data.languageId);
-            localStorage.setItem('languageId', response.data.languageId);
-            localStorage.setItem('language', response.data.language);
-            // const currentUrl = new URL(window.location.href);
-            // currentUrl.searchParams.set('language', language);
-            // window.history.pushState({}, '', currentUrl);
+            const { languageId: newLanguageId } = response.data;
+            setLanguageId(newLanguageId);
 
+            localStorage.setItem('language', language);
+            localStorage.setItem('languageId', newLanguageId);
+
+            // Reload or update the UI if necessary
             window.location.reload();
-
         } catch (error) {
             console.error('Error updating language:', error);
         }
@@ -95,6 +105,12 @@ export default function AuthenticatedLayout({ children }) {
                     >
                         Rules for Outlines
                     </NavLink>
+                    <NavLink
+                        href={route('contractions')}
+                        active={route().current('contractions') || route().current('contractions-edit')}
+                    >
+                        Contractions
+                    </NavLink>
                 </div>
             </aside>
 
@@ -106,14 +122,15 @@ export default function AuthenticatedLayout({ children }) {
                     style={{ marginLeft: '16rem', width: 'calc(100% - 16rem)' }}
                 >
                     <div className="hidden sm:flex sm:items-center">
-                    <select
-                        className="border-1 bg-white rounded me-2"
-                        value={selectedLanguage}
-                        onChange={handleLanguageChange}
-                    >
-                        <option value="hindi">Hindi</option>
-                        <option value="english">English</option>
-                    </select>
+                        <select
+                            className="border-1 bg-white rounded me-2"
+                            value={selectedLanguage}
+                            onChange={handleLanguageChange}
+                        >
+                            <option value="please select language">Please select language</option>
+                            <option value="hindi">Hindi</option>
+                            <option value="english">English</option>
+                        </select>
                         <Dropdown>
                             <Dropdown.Trigger>
                                 <span className="inline-flex rounded-md rounded">

@@ -121,4 +121,22 @@ class GrammaloguesController extends Controller
         return response()->json($dictation);
     }
 
+    public function SearchByGrammalogue(Request $request)
+    {
+        $request->validate([
+            'word' => 'required|string'
+        ]);
+
+        $searchOutline = Grammalogue::where('word', $request->word)->first();
+
+        if (!$searchOutline) {
+            return response()->json([
+                'message' => 'No matching notes found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'search_grammalogue' => $searchOutline,
+        ], 200);
+    }
 }

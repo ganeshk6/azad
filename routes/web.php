@@ -8,6 +8,7 @@ use App\Http\Controllers\DictationController;
 use App\Http\Controllers\GrammaloguesController;
 use App\Http\Controllers\OutlineController;
 use App\Http\Controllers\RulesOutlinesController;
+use App\Http\Controllers\ContractionsController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -66,6 +67,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/rules-for-outlines-formation/words', [RulesOutlinesController::class, 'getWords'])->name('rulesOutlines-getWords');
     Route::any('/rules-for-outlines-formation/edit/{id}', [RulesOutlinesController::class, 'rulesOutlinesEdit'])->name('rulesOutlines-edit');
     Route::delete('/rules-for-outlines-formation/{id}', [RulesOutlinesController::class, 'destroy'])->name('rulesOutlines-delete');
+
+    // basic outlines 
+    Route::any('/contractions', [ContractionsController::class, 'contractions'])->name('contractions');
+    Route::get('/contractions/words', [ContractionsController::class, 'getWords'])->name('contractions-getWords');
+    Route::any('/contractions/edit/{id}', [ContractionsController::class, 'contractionsEdit'])->name('contractions-edit');
+    Route::delete('/contractions/{id}', [ContractionsController::class, 'destroy'])->name('contractions-delete');
 
 });
 

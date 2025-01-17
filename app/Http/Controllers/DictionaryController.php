@@ -121,4 +121,23 @@ class DictionaryController extends Controller
         return response()->json($dictation);
     }
 
+    public function SearchByDictinary(Request $request)
+    {
+        $request->validate([
+            'word' => 'required|string'
+        ]);
+
+        $searchOutline = Dictionary::where('word', $request->word)->first();
+
+        if (!$searchOutline) {
+            return response()->json([
+                'message' => 'No matching notes found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'search_dictionary' => $searchOutline,
+        ], 200);
+    }
+
 }

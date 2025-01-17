@@ -72,7 +72,7 @@ const Edit = ({ dictionary }) => {
                         <div className="col-10 bg-white shadow-md rounded-lg p-6 relative">
                             {/* Word Title */}
                             <div className="mb-3">
-                                <label htmlFor="wordTitle" className="form-label">Title (Word Name)</label>
+                                <label htmlFor="wordTitle" className="form-label">Grammalogues Title (Word Name)</label>
                                 <input
                                     id="wordTitle"
                                     type="text"
@@ -85,7 +85,7 @@ const Edit = ({ dictionary }) => {
                             </div>
 
                             {/* Word Description */}
-                            <label htmlFor="wordDescription" className="form-label">Description (Word)</label>
+                            {/* <label htmlFor="wordDescription" className="form-label">Description (Word)</label>
                             <CKEditor
                                 editor={ClassicEditor}
                                 data={getDictionary.description}
@@ -94,12 +94,15 @@ const Edit = ({ dictionary }) => {
                                     const data = editor.getData();
                                     setDictionary({ ...getDictionary, description: data });
                                 }}
-                            />
+                            /> */}
 
                             {/* Signature */}
                             <div className="bg-white shadow-md rounded-lg p-6 relative border-2 mt-3 mb-3">
                                 <label htmlFor="wordSign" className="form-label">Word Signature</label>
-                                {newSign && <img src={newSign} alt="" className="my-3" />}
+                                {newSign && 
+                                    <img src={`https://azadshorthand.com/admin/public/${newSign}`} alt="Signature" className="my-3" />
+
+                                }
                                 <SignatureCanvas
                                     canvasProps={{ className: 'sigCanvas' }}
                                     ref={(data) => setSign(data)}
@@ -121,7 +124,7 @@ const Edit = ({ dictionary }) => {
                             </div>
 
                             {/* Sub Entries */}
-                            <div className="mt-4">
+                            {/* <div className="mt-4">
                                 <div className='d-flex justify-between mb-3 align-items-center'>
                                     <label className="form-label h5 fw-bold">Sub Word</label>
                                     <button
@@ -191,7 +194,7 @@ const Edit = ({ dictionary }) => {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </div> */}
                         </div>
 
                         {/* Submit Button */}

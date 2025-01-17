@@ -2,15 +2,22 @@ import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import SignatureCanvas from 'react-signature-canvas'
 
 const Edit = ({ dictation }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [imageFile, setImageFile] = useState(null);
     const [getDictation, setDictation] = useState(dictation);
-    const [notes, setNotes] = useState(dictation.notes || []); 
     const [signWord, setSign] = useState();
     const [newSign, setNewSign] = useState(dictation.image);
+
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setImageFile(e.target.files[0]);
+        }
+    };
 
     const handleClear = () => {
         signWord.clear();
@@ -21,50 +28,29 @@ const Edit = ({ dictation }) => {
         setNewSign(signWord.getTrimmedCanvas().toDataURL('image/png'));
     };
 
-
-    const handleFileChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setImageFile(e.target.files[0]);
-        }
-    };
-
-    const handleAddNote = () => {
-        setNotes([...notes, { id: Date.now(), notes: '' }]);
-    };
-
-    const handleNoteChange = (index, value) => {
-        const updatedNotes = [...notes];
-        updatedNotes[index].notes = value;
-        setNotes(updatedNotes);
-    };
-
-    const handleDeleteNote = (index) => {
-        const updatedNotes = notes.filter((_, i) => i !== index);
-        setNotes(updatedNotes);
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+
         const signatureImage = signWord && !signWord.isEmpty()
                 ? signWord.getTrimmedCanvas().toDataURL('image/png')
                 : newSign;
             setNewSign(signatureImage);
+
         try {
             const formData = new FormData();
             formData.append('sentence', getDictation.sentence);
-            formData.append('notes', JSON.stringify(notes)); 
             if (signatureImage) {
                 formData.append('image', signatureImage);
             }
 
-            await axios.post(route('outlines-edit', getDictation.id), formData, {
+            await axios.post(route('contractions-edit', getDictation.id), formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
         } catch (error) {
-            console.error('Error updating outlines:', error);
-            alert('Failed to update outlines. Please try again.');
+            console.error('Error updating contractions:', error);
+            alert('Failed to update contractions. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -79,7 +65,7 @@ const Edit = ({ dictation }) => {
                     <div className="row">
                         <div className="col-10 bg-white shadow-md rounded-lg p-6 relative">
                             <div className="mb-3">
-                                <label htmlFor="wordTitle" className="form-label">Sentence</label>
+                                <label htmlFor="wordTitle" className="form-label">Contractions Sentence</label>
                                 <input
                                     id="wordTitle"
                                     type="text"
@@ -116,44 +102,6 @@ const Edit = ({ dictation }) => {
                                 >
                                     save Sign
                                 </button>
-                            </div>
-                            <div className="bg-white shadow-md rounded-lg p-6 relative border-2 mt-3">
-                                <div className='d-flex justify-between mb-3 align-items-center'>
-                                    <label className="form-label h5 fw-bold">Search By</label>
-                                    <button
-                                        type="button"
-                                        className="p-2 rounded-0 bg-[green] text-[#fff] d-flex align-items-center"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#exampleModal"
-                                        onClick={handleAddNote}
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-plus-lg text-white me-2" viewBox="0 0 16 16">
-                                            <path fillRule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
-                                        </svg>
-                                        Add More
-                                    </button>
-                                </div>
-                                {notes.map((note, index) => (
-                                    <div key={index} className="d-flex align-items-center mb-2">
-                                        <input
-                                            type="text"
-                                            className="form-control rounded-1 me-2"
-                                            placeholder="Enter note"
-                                            value={note.notes} // Use note.notes instead of the entire note object
-                                            onChange={(e) => handleNoteChange(index, e.target.value)}
-                                        />
-                                        <button
-                                            type="button"
-                                            className="btn btn-danger rounded-0"
-                                            style={{ padding: "12px" }}
-                                            onClick={() => handleDeleteNote(index)}
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash3" viewBox="0 0 16 16">
-                                                <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                ))}
                             </div>
                         </div>
                         <div className="col-2">
