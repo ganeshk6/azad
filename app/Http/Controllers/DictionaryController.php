@@ -121,7 +121,6 @@ class DictionaryController extends Controller
         return response()->json($dictation);
     }
     
-
     public function SearchByDictinary(Request $request)
     {
         $request->validate([
