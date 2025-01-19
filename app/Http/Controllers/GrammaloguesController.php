@@ -109,9 +109,9 @@ class GrammaloguesController extends Controller
 
     public function grammaloguesApi($id)
     {
-        $dictation = Grammalogue::where('language_id', $id)->with('subEntries')->get();
+        $dictation = Grammalogue::select('word', 'sign')->where('language_id', $id)->get();
 
-        return response()->json($dictation);
+        return response()->json([ 'grammalogue'=> $dictation]);
     }
 
     public function subGrammaloguesApi($id)
@@ -127,7 +127,7 @@ class GrammaloguesController extends Controller
             'word' => 'required|string'
         ]);
 
-        $searchOutline = Grammalogue::where('word', $request->word)->first();
+        $searchOutline = Grammalogue::select('word', 'sign')->where('word', $request->word)->first();
 
         if (!$searchOutline) {
             return response()->json([
@@ -136,7 +136,7 @@ class GrammaloguesController extends Controller
         }
 
         return response()->json([
-            'search_grammalogue' => $searchOutline,
+            'grammalogue' => $searchOutline,
         ], 200);
     }
 }

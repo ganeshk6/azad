@@ -160,17 +160,17 @@ class RulesOutlinesController extends Controller
             return [
                 'id'=> $item->id,
                 'sentence'=> $item->sentence,
-                'description'=> $item->description,
                 'image'=> $item->image,
+                'type_rules_outline'=> $item->TypeRulesOutline->select('word', 'description', 'signature', 'rules_outline_id')
             ];
         });
 
-        return response()->json($dictation);
+        return response()->json(['rule_outline'=> $dictationData ]);
     }
 
     public function TypeOutlinesApi($id)
     {
-        $dictation = TypeRulesOutline::where('rules_outline_id', $id)->get();
+        $dictation = TypeRulesOutline::select('word', 'description', 'signature', 'rules_outline_id')->where('rules_outline_id', $id)->get();
 
         return response()->json($dictation);
     }

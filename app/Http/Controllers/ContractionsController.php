@@ -104,13 +104,12 @@ class ContractionsController extends Controller
 
         $dictationData = $dictation->map(function ($item) {
             return [
-                'id'=> $item->id,
                 'sentence'=> $item->sentence,
                 'image'=> $item->image,
             ];
         });
 
-        return response()->json($dictationData);
+        return response()->json(['contraction' => $dictationData ]);
     }
 
     public function SearchByContractions(Request $request)
@@ -119,7 +118,7 @@ class ContractionsController extends Controller
             'sentence' => 'required|string'
         ]);
 
-        $searchOutline = Contraction::where('sentence', $request->sentence)->first();
+        $searchOutline = Contraction::select('sentence', 'image' )->where('sentence', $request->sentence)->first();
 
         if (!$searchOutline) {
             return response()->json([
@@ -128,7 +127,7 @@ class ContractionsController extends Controller
         }
 
         return response()->json([
-            'search_contraction' => $searchOutline,
+            'contraction' => $searchOutline,
         ], 200);
     }
 }

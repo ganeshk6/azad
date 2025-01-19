@@ -139,20 +139,21 @@ class OutlineController extends Controller
 
         $dictationData = $dictation->map(function ($item) {
             return [
-                'id'=> $item->id,
+                'id' => $item->id,
                 'sentence'=> $item->sentence,
                 'image'=> $item->image,
+                'outline_search' => $item->OutlineSearch->select('notes')
             ];
         });
 
-        return response()->json($dictation);
+        return response()->json([ 'dictation' => $dictationData ]);
     }
 
     public function SearchOutlinesApi($id)
     {
-        $dictation = SearchOutline::where('outline_id', $id)->get();
+        $dictation = SearchOutline::select('notes')->where('outline_id', $id)->get();
 
-        return response()->json($dictation);
+        return response()->json(['dictation' => $dictation ]);
     }
     public function SearchBy(Request $request)
     {
@@ -167,7 +168,7 @@ class OutlineController extends Controller
                 'message' => 'No matching notes found.',
             ], 404);
         }
-        $outline = Outline::find($searchOutline->outline_id);
+        $outline = Outline::select('sentence', 'image', 'language_id')->find($searchOutline->outline_id);
 
         if (!$outline) {
             return response()->json([
@@ -175,7 +176,7 @@ class OutlineController extends Controller
             ], 404);
         }
         return response()->json([
-            'search_outline' => $searchOutline,
+            // 'search_outline' => $searchOutline,
             'outline' => $outline,
         ], 200);
     }

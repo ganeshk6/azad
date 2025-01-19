@@ -19,3 +19,14 @@
 .accordion-collapse {
     visibility: visible !important;
 }
+
+@font-face {
+    font-family: 'TrutiLipi010';
+    src: url('/public/fonts/trutilipi010.ttf') format('truetype'); 
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* body {
+    font-family: 'TrutiLipi010', sans-serif ;
+} */

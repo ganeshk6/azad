@@ -109,7 +109,9 @@ class DictionaryController extends Controller
 
     public function dictionaryApi($id)
     {
-        $dictation = Dictionary::where('language_id', $id)->with('subEntries')->get();
+        $dictation = Dictionary::select('word', 'sign')->where('language_id', $id)
+        // ->with('subEntries')
+        ->get();
 
         return response()->json($dictation);
     }
@@ -118,7 +120,7 @@ class DictionaryController extends Controller
     {
         $dictation = SubDictionary::where('dictionary_id', $id)->get();
 
-        return response()->json($dictation);
+        return response()->json(['dictionary' => $dictation ]);
     }
     
     
@@ -128,7 +130,7 @@ class DictionaryController extends Controller
             'word' => 'required|string'
         ]);
 
-        $searchOutline = Dictionary::where('word', $request->word)->first();
+        $searchOutline = Dictionary::select('word', 'sign')->where('word', $request->word)->first();
 
         if (!$searchOutline) {
             return response()->json([

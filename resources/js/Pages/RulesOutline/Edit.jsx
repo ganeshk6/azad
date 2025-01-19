@@ -132,6 +132,8 @@ const Edit = ({ phrasesData }) => {
                                 <SignatureCanvas
                                     canvasProps={{ className: 'sigCanvas' }}
                                     ref={(data) => setSign(data)}
+                                    minWidth={0.3}
+                                    maxWidth={1.5}
                                 />
                                 <button
                                     type="button"
@@ -150,7 +152,7 @@ const Edit = ({ phrasesData }) => {
                             </div>
                             <div>
                                 <div className='d-flex justify-between mb-3 align-items-center'>
-                                    <label className="form-label h5 fw-bold">Tyle od Rule</label>
+                                    <label className="form-label h5 fw-bold">Type of Rule</label>
                                     <button
                                         type="button"
                                         className="p-2 rounded-0 bg-[green] text-[#fff] d-flex align-items-center"
@@ -231,6 +233,8 @@ const Edit = ({ phrasesData }) => {
                                                             }
                                                         <SignatureCanvas
                                                             canvasProps={{ className: 'sigCanvas' }}
+                                                            minWidth={0.3}
+                                                            maxWidth={1.5}
                                                             ref={(data) => {
                                                                 if (data) {
                                                                     signatureRefs.current[section.id] = data;

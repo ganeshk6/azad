@@ -138,7 +138,7 @@ class PhrasesController extends Controller
 
     public function phrasesApi($id)
     {
-        $dictation = Phrase::where('language_id', $id)->with('PhraseWord')->get();
+        $dictation = Phrase::select('letter', 'sign')->where('language_id', $id)->get();
 
         return response()->json($dictation);
     }
@@ -147,7 +147,7 @@ class PhrasesController extends Controller
     {
         $dictation = PhraseWord::where('phrase_id', $id)->get();
 
-        return response()->json($dictation);
+        return response()->json(['phrase' => $dictation ]);
     }
     
     public function SearchByPhrase(Request $request)
@@ -156,7 +156,7 @@ class PhrasesController extends Controller
             'letter' => 'required|string'
         ]);
 
-        $searchOutline = Phrase::where('letter', $request->letter)->first();
+        $searchOutline = Phrase::select('letter', 'sign')->where('letter', $request->letter)->first();
 
         if (!$searchOutline) {
             return response()->json([
@@ -165,7 +165,7 @@ class PhrasesController extends Controller
         }
 
         return response()->json([
-            'search_phrase' => $searchOutline,
+            'phrase' => $searchOutline,
         ], 200);
     }
 }

@@ -106,6 +106,8 @@ const Edit = ({ dictionary }) => {
                                 <SignatureCanvas
                                     canvasProps={{ className: 'sigCanvas' }}
                                     ref={(data) => setSign(data)}
+                                    minWidth={0.3}
+                                    maxWidth={1.5}
                                 />
                                 <button
                                     type="button"

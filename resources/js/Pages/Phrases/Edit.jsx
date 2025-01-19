@@ -120,6 +120,8 @@ const Edit = ({ phrasesData }) => {
                                 <SignatureCanvas
                                     canvasProps={{ className: 'sigCanvas' }}
                                     ref={(data) => setSign(data)}
+                                    minWidth={0.3}
+                                    maxWidth={1.5}
                                 />
                                 <button
                                     type="button"
@@ -219,6 +221,8 @@ const Edit = ({ phrasesData }) => {
                                                             }
                                                         <SignatureCanvas
                                                             canvasProps={{ className: 'sigCanvas' }}
+                                                            minWidth={0.3}
+                                                            maxWidth={1.5}
                                                             ref={(data) => {
                                                                 if (data) {
                                                                     signatureRefs.current[section.id] = data;
