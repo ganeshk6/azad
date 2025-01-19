@@ -111,7 +111,7 @@ class GrammaloguesController extends Controller
     {
         $dictation = Grammalogue::select('word', 'sign')->where('language_id', $id)->get();
 
-        return response()->json([ 'grammalogue'=> $dictation]);
+        return response()->json($dictation);
     }
 
     public function subGrammaloguesApi($id)
@@ -135,8 +135,6 @@ class GrammaloguesController extends Controller
             ], 404);
         }
 
-        return response()->json([
-            'grammalogue' => $searchOutline,
-        ], 200);
+        return response()->json([$searchOutline]);
     }
 }

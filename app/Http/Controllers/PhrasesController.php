@@ -138,9 +138,18 @@ class PhrasesController extends Controller
 
     public function phrasesApi($id)
     {
-        $dictation = Phrase::select('letter', 'sign')->where('language_id', $id)->get();
+        $dictation = Phrase::where('language_id', $id)->get();
 
-        return response()->json($dictation);
+        $dictationData = $dictation->map(function ($item) {
+            return [
+                // 'id' => $item->id,
+                'word'=> $item->letter,
+                'sign'=> $item->sign,
+                // 'outline_search' => $item->OutlineSearch->select('notes')
+            ];
+        });
+
+        return response()->json($dictationData);
     }
 
     public function subPhrasesApi($id)
@@ -164,8 +173,11 @@ class PhrasesController extends Controller
             ], 404);
         }
 
-        return response()->json([
-            'phrase' => $searchOutline,
-        ], 200);
+        $responseData = [
+            'word' => $searchOutline->letter,
+            'sign' => $searchOutline->sign,
+        ];
+
+        return response()->json([$responseData]);
     }
 }

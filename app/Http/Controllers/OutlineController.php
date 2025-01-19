@@ -139,14 +139,14 @@ class OutlineController extends Controller
 
         $dictationData = $dictation->map(function ($item) {
             return [
-                'id' => $item->id,
-                'sentence'=> $item->sentence,
-                'image'=> $item->image,
-                'outline_search' => $item->OutlineSearch->select('notes')
+                // 'id' => $item->id,
+                'word'=> $item->sentence,
+                'sign'=> $item->image,
+                // 'outline_search' => $item->OutlineSearch->select('notes')
             ];
         });
 
-        return response()->json([ 'dictation' => $dictationData ]);
+        return response()->json($dictationData, 200);
     }
 
     public function SearchOutlinesApi($id)
@@ -168,16 +168,18 @@ class OutlineController extends Controller
                 'message' => 'No matching notes found.',
             ], 404);
         }
-        $outline = Outline::select('sentence', 'image', 'language_id')->find($searchOutline->outline_id);
+        $outline = Outline::find($searchOutline->outline_id);
+
+        $responseData = [
+            'word' => $outline->sentence,
+            'sign' => $outline->image,
+        ];
 
         if (!$outline) {
             return response()->json([
                 'message' => 'Associated outline not found.',
             ], 404);
         }
-        return response()->json([
-            // 'search_outline' => $searchOutline,
-            'outline' => $outline,
-        ], 200);
+        return response()->json( [$responseData]);
     }
 }

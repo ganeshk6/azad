@@ -107,24 +107,29 @@ class DictationController extends Controller
 
         $dictationData = $dictation->map(function ($item) {
             return [
-                'sentence'=> $item->sentence,
+                'word'=> $item->sentence,
                 'link'=> $item->link,
-                'image'=> $item->image,
+                'sign'=> $item->image,
             ];
         });
-        return response()->json([
-            'dictation' => $dictationData,
-        ], 200);
-
+        return response()->json($dictationData, 200);
     }
 
     public function SearchByDictationApi(Request $request)
     {
         $request->validate([
-            'sentence' => 'required|string'
+            'word' => 'required|string'
         ]);
 
-        $searchOutline = Dictation::select('sentence', 'link', 'image')->where('sentence', $request->sentence)->first();
+        $searchOutline = Dictation::where('sentence', $request->word)->get();
+
+        $dictationData = $searchOutline->map(function ($item) {
+            return [
+                'word'=> $item->sentence,
+                'link'=> $item->link,
+                'sign'=> $item->image,
+            ];
+        });
 
         if (!$searchOutline) {
             return response()->json([
@@ -132,8 +137,6 @@ class DictationController extends Controller
             ], 404);
         }
 
-        return response()->json([
-            'dictation' => $searchOutline,
-        ], 200);
+        return response()->json($dictationData,200);
     }
 }

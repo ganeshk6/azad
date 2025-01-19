@@ -138,9 +138,7 @@ class DictionaryController extends Controller
             ], 404);
         }
 
-        return response()->json([
-            'search_dictionary' => $searchOutline,
-        ], 200);
+        return response()->json([$searchOutline]);
     }
 
 }
