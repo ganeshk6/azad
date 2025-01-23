@@ -45,26 +45,26 @@ class DictationController extends Controller
         if ($request->isMethod('post')) {
             $request->validate([
                 'sentence' => 'required|string|max:255',
-                'image' => 'nullable|string',
+                'image' => 'nullable',
                 'link' => 'nullable|string|max:255',
             ]);
         
             $dictation = Dictation::findOrFail($id);
         
-            if ($request->input('image')) {
-                $imageData = $request->input('image');
-                $imagePath = public_path("images/dictations/{$dictation->id}_dictations.png");
-                $imageContent = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $imageData));
-                file_put_contents($imagePath, $imageContent);
-                $dictation->image = "/images/dictations/{$dictation->id}_dictations.png";
-            } elseif ($request->has('clearSign') && $request->clearSign) {
-                $dictation->image = null;
-                $imagePath = public_path("images/dictations/{$dictation->id}_dictations.png");
+            if ($request->hasFile('image')) {
+                // Get the uploaded file
+                $file = $request->file('image');
             
-                if (file_exists($imagePath)) {
-                    unlink($imagePath); 
-                }
-            }
+                // Generate a unique file name with the desired directory
+                $fileName = "{$dictation->id}_dictations." . $file->getClientOriginalExtension();
+                $filePath = "images/dictations/{$fileName}";
+            
+                // Store the file in the public disk
+                $file->storeAs('images/dictations', $fileName, 'public');
+            
+                // Save the file path to the database
+                $dictation->image = $filePath;
+            } 
         
             $dictation->sentence = $request->input('sentence');
             $dictation->link = $request->input('link');

@@ -47,35 +47,37 @@ class GrammaloguesController extends Controller
             $request->validate([
                 'word' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'sub_entries' => 'nullable|array',
+                'sub_entries' => 'nullable',
                 'sub_entries.*.sub_word' => 'nullable|string|max:255',
                 'sub_entries.*.sub_description' => 'nullable|string',
-                'sign' => 'nullable|string', 
+                'sign' => 'nullable', 
             ]);
 
             $dictionary = Grammalogue::findOrFail($id);
 
-            if ($request->input('sign')) {
-                $imageData = $request->input('sign');
-                $imagePath = public_path("images/grammalogue/{$dictionary->id}_signature.png");
-                $imageContent = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $imageData));
-                file_put_contents($imagePath, $imageContent);
-                $dictionary->sign = "/images/grammalogue/{$dictionary->id}_signature.png";
-            } elseif ($request->has('clearSign') && $request->clearSign) {
-                $dictionary->sign = null;
-                $imagePath = public_path("images/grammalogue/{$dictionary->id}_signature.png");
+            if ($request->hasFile('sign')) {
+                $file = $request->file('sign');
+                // Generate a unique file name with the desired directory
+                $fileName = "{$dictionary->id}_grammalogue." . $file->getClientOriginalExtension();
+                $filePath = "images/grammalogue/{$fileName}";
             
-                if (file_exists($imagePath)) {
-                    unlink($imagePath); 
-                }
-            }
+                // Store the file in the public disk
+                $file->storeAs('images/grammalogue', $fileName, 'public');
+            
+                // Save the file path to the database
+                $dictionary->sign = $filePath;
+            } 
+
             $dictionary->word = $request->input('word');
             $dictionary->description = $request->input('description');
             $dictionary->save();
 
+            $subEntries = $request->has('sub_entries') 
+                    ? json_decode($request->input('sub_entries', '[]'), true) 
+                    : [];
             // Save sub-entries
             $dictionary->subEntries()->delete();
-            foreach ($request->input('sub_entries', []) as $subEntry) {
+            foreach ($subEntries as $subEntry) {
                 SubGrammalogue::create([
                     'grammalogue_id' => $dictionary->id,
                     'sub_word' => $subEntry['sub_word'],

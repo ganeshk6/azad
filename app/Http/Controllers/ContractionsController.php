@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Contraction;
+use Storage;
 
 class ContractionsController extends Controller
 {
@@ -44,26 +45,25 @@ class ContractionsController extends Controller
     {
         if ($request->isMethod('post')) {
             $request->validate([
-                'sentence' => 'required|string|max:255',
-                'image' => 'nullable|string',
+                'sentence' => 'required|string',
+                'image' => 'nullable',
             ]);
         
             $dictation = Contraction::findOrFail($id);
             
-            if ($request->input('image')) {
-                $imageData = $request->input('image');
-                $imagePath = public_path("images/contractions/{$dictation->id}_contractions.png");
-                $imageContent = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $imageData));
-                file_put_contents($imagePath, $imageContent);
-                $dictation->image = "/images/contractions/{$dictation->id}_contractions.png";
-            } elseif ($request->has('clearSign') && $request->clearSign) {
-                $dictation->image = null;
-                $imagePath = public_path("images/contractions/{$dictation->id}_contractions.png");
+            if ($request->hasFile('image')) {
+                // Get the uploaded file
+                $file = $request->file('image');
             
-                if (file_exists($imagePath)) {
-                    unlink($imagePath); 
-                }
-            }
+                $fileName = "{$dictation->id}_contractions." . $file->getClientOriginalExtension();
+                $filePath = "images/contractions/{$fileName}";
+            
+                // Store the file in the public disk
+                $file->storeAs('images/contractions', $fileName, 'public');
+            
+                // Save the file path to the database
+                $dictation->image = $filePath;
+            } 
 
             $dictation->sentence = $request->input('sentence');
             $dictation->save();

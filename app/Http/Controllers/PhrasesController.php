@@ -46,8 +46,8 @@ class PhrasesController extends Controller
         if ($request->isMethod('post')) {
             $request->validate([
                 'letter' => 'required|string',
-                'sign' => 'nullable|string', 
-                'wordSections' => 'nullable|array',
+                'sign' => 'nullable', 
+                'wordSections' => 'nullable',
                 'wordSections.*.word' => 'nullable|string|max:255',
                 'wordSections.*.description' => 'nullable|string',
                 'wordSections.*.signature' => 'nullable|string',
@@ -56,29 +56,28 @@ class PhrasesController extends Controller
             $phrase = Phrase::findOrFail($id);
             $phrase->letter = $request->input('letter');
 
-            if ($request->input('sign')) {
-                $imageData = $request->input('sign');
-                $imagePath = public_path("images/phrases/{$phrase->id}_phrase.png");
-                $imageContent = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $imageData));
-                file_put_contents($imagePath, $imageContent);
-                $phrase->sign = "/images/phrases/{$phrase->id}_phrase.png";
-            } elseif ($request->has('clearSign') && $request->clearSign) {
-                $phrase->sign = null;
-                $imagePath = public_path("images/phrases/{$phrase->id}_phrase.png");
-            
-                if (file_exists($imagePath)) {
-                    unlink($imagePath); 
-                }
-            }
-            $phrase->save();
+            if ($request->hasFile('sign')) {
+                $file = $request->file('sign');
+                $fileName = "{$phrase->id}_phrase." . $file->getClientOriginalExtension();
+                $filePath = "images/phrases/{$fileName}";
 
-            $incomingIds = collect($request->input('wordSections'))->pluck('id')->filter()->toArray();
+                $file->storeAs('images/phrases', $fileName, 'public');
+            
+                $phrase->sign = $filePath;
+            } 
+
+            $phrase->save();
+            $wordSections = $request->input('wordSections', []);
+            if (!is_array($wordSections)) {
+                $wordSections = json_decode($wordSections, true) ?? [];
+            }
+
+            $incomingIds = collect($wordSections)->pluck('id')->filter()->toArray();
             $existingIds = PhraseWord::where('phrase_id', $phrase->id)->pluck('id')->toArray();
             $idsToDelete = array_diff($existingIds, $incomingIds);
             PhraseWord::whereIn('id', $idsToDelete)->delete();
 
-            foreach ($request->input('wordSections') as $section) {
-
+            foreach ($wordSections as $section) {
                 $word = PhraseWord::updateOrCreate(
                     ['id' => $section['id']],
                     [
@@ -89,6 +88,7 @@ class PhrasesController extends Controller
                     ]
                 );
 
+                // Save signature as file if provided
                 if (!empty($section['signature']) && $word !== null) {
                     $signaturePath = public_path("images/phrases/{$word->id}_phrase.png");
                     $signatureData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $section['signature']));

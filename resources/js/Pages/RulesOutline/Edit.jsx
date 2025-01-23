@@ -2,20 +2,32 @@ import React, { useState, useRef, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import SignatureCanvas from 'react-signature-canvas'
 import { Head } from '@inertiajs/react';
 
 const Edit = ({ phrasesData }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [getPhrase, setPhrase] = useState(phrasesData);
-    const [signWord, setSign] = useState();
-    const [newSign, setNewSign] = useState(phrasesData.image);
     const [wordSection, setWordSections] = useState(phrasesData.wordSections);
+    const [imageFile, setImageFile] = useState(null);
+
+    
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setPhrase({ ...getPhrase, image: event.target.result });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const signatureRefs = useRef({});
 
     const handleAddSection = () => {
-        setWordSections([...wordSection, { id: Date.now(), word: '', description: '', signature: null }]);
+        setWordSections([...wordSection, { id: Date.now(), word: '', description: '', signature: '' }]);
     };
 
     
@@ -28,64 +40,60 @@ const Edit = ({ phrasesData }) => {
         setWordSections(
             wordSection.map((section) => (section.id === id ? { ...section, [key]: value } : section))
         );
-    };
+    };   
 
-    const handleSaveSignature = (id) => {
-        const signatureRef = signatureRefs.current[id];
-        if (!signatureRef) {
-            console.error(`Signature ref missing for ID: ${id}`);
-            return;
-        }
-    
-        const signatureImage = signatureRef.isEmpty()
-            ? wordSection.find((section) => section.id === id)?.signature 
-            : signatureRef.getTrimmedCanvas().toDataURL('image/png'); 
-    
-        const updatedSections = wordSection.map((section) => 
-            section.id === id && section.signature !== signatureImage 
-            ? { ...section, signature: signatureImage }
-            : section
-        );
-    
-        if (JSON.stringify(updatedSections) !== JSON.stringify(wordSection)) {
-            setWordSections(updatedSections);
+    const handleFileUpload = (file, callback) => {
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => callback(event.target.result);
+            reader.readAsDataURL(file);
         }
     };
 
-    const handleClear = () => {
-        signWord.clear();
-        setNewSign(null);
-    };
-
-    const handleSave = () => {
-        setNewSign(signWord.getTrimmedCanvas().toDataURL('image/png'));
-    };
-
-    const handleClearSignature = (id) => {
-        const signatureRef = signatureRefs.current[id];
-        if (signatureRef) {
-            signatureRef.clear();
+    const handleSubsectionImageChange = (id, e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleFileUpload(file, (signature) => {
+                setWordSections((sections) =>
+                    sections.map((section) =>
+                        section.id === id ? { ...section, signature } : section
+                    )
+                );
+            });
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        const signatureImage = signWord && !signWord.isEmpty()
-                ? signWord.getTrimmedCanvas().toDataURL('image/png')
-                : newSign;
-            setNewSign(signatureImage);
-
+    
         try {
-            const response = await axios.post(route('rulesOutlines-edit', getPhrase.id), {
-                sentence: getPhrase.sentence,
-                description: getPhrase.description,
-                signatureImage:signatureImage,
-                wordSections: wordSection,
+            const formData = new FormData();
+            formData.append("sentence", getPhrase.sentence);
+            formData.append("description", getPhrase.description);
+            if (imageFile) {
+                formData.append('image', imageFile);  
+            }
+            wordSection.forEach((section, index) => {
+                formData.append(`wordSections[${index}][id]`, section.id);
+                formData.append(`wordSections[${index}][word]`, section.word);
+                formData.append(`wordSections[${index}][description]`, section.description);
+                if (section.signature instanceof File) {
+                    formData.append(`wordSections[${index}][signature]`, section.signature);
+                } else if (section.signature && typeof section.signature === "string") {
+                    formData.append(`wordSections[${index}][signatureUrl]`, section.signature);
+                }
             });
+    
+            await axios.post(route("rulesOutlines-edit", getPhrase.id), formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+    
         } catch (error) {
-            console.error('Error updating phrases:', error);
-            alert('Failed to update phrases. Please try again.');
+            console.error("Error updating phrases:", error);
+            alert("Failed to update phrases. Please try again.");
         } finally {
             setIsLoading(false);
         }
@@ -125,30 +133,22 @@ const Edit = ({ phrasesData }) => {
                             </div> */}
                             <div className="bg-white shadow-md rounded-lg p-6 relative border-2 mt-3 mb-3">
                                 <label htmlFor="wordSign" className="form-label">Word Signature</label>
-                                {newSign && 
-                                    <img src={`https://azadshorthand.com/admin/public/${newSign}`} alt="Signature" className="my-3" />
-
-                                    }
-                                <SignatureCanvas
-                                    canvasProps={{ className: 'sigCanvas' }}
-                                    ref={(data) => setSign(data)}
-                                    minWidth={0.3}
-                                    maxWidth={1.5}
+                                {getPhrase.image && (
+                                    <img
+                                        src={getPhrase.image}
+                                        alt="Preview"
+                                        className="my-3 w-50 h-100"
+                                        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                    />
+                                )}
+                                <input
+                                    id="wordImage"
+                                    type="file"
+                                    className="form-control rounded-1 border-2 p-2"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
                                 />
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary mt-3"
-                                    onClick={handleClear}
-                                >
-                                    Clear sign
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-success mt-3 ms-2"
-                                    onClick={handleSave}
-                                >
-                                    save Sign
-                                </button>
+                               
                             </div>
                             <div>
                                 <div className='d-flex justify-between mb-3 align-items-center'>
@@ -192,7 +192,7 @@ const Edit = ({ phrasesData }) => {
                                             </h2>
                                             <div
                                                 id={`collapse-${section.id}`}
-                                                className="accordion-collapse collapse show"
+                                                className="accordion-collapse collapse hide"
                                                 aria-labelledby={`heading-${section.id}`}
                                                 data-bs-parent="#accordionExample"
                                             >
@@ -228,27 +228,22 @@ const Edit = ({ phrasesData }) => {
                                                         <label htmlFor={`signature-${section.id}`} className="form-label">
                                                             Word Signature
                                                         </label>
-                                                        {section.signature && 
-                                                            <img src={`https://azadshorthand.com/admin/public/${section.signature}`} alt="Signature" className="my-3" />
-                                                            }
-                                                        <SignatureCanvas
-                                                            canvasProps={{ className: 'sigCanvas' }}
-                                                            minWidth={0.3}
-                                                            maxWidth={1.5}
-                                                            ref={(data) => {
-                                                                if (data) {
-                                                                    signatureRefs.current[section.id] = data;
-                                                                    handleSaveSignature(section.id); // Automatically save the signature
-                                                                }
-                                                            }}
+                                                        {section.signature && (
+                                                            <img
+                                                            src={typeof section.signature === "string" ? section.signature : URL.createObjectURL(section.signature)}
+                                                            alt="Preview"
+                                                            className="my-3 w-50 h-100"
+                                                            style={{ width: "100px", height: "100px", objectFit: "cover" }}
                                                         />
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-secondary mt-3"
-                                                            onClick={() => handleClearSignature(section.id)}
-                                                        >
-                                                            Clear Sign
-                                                        </button>
+                                                        )}
+                                                        <input
+                                                            id={`signature-${section.id}`}
+                                                            type="file"
+                                                            className="form-control rounded-1 border-2 p-2"
+                                                            accept="image/*"
+                                                            onChange={(e) => handleSubsectionImageChange(section.id, e)}
+                                                        />
+
                                                     </div>
                                                 </div>
                                             </div>

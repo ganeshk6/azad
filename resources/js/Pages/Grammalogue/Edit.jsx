@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
@@ -7,18 +7,21 @@ import { Head } from '@inertiajs/react';
 
 const Edit = ({ dictionary }) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [signWord, setSign] = useState();
-    const [newSign, setNewSign] = useState(dictionary.sign);
     const [getDictionary, setDictionary] = useState(dictionary);
-    const [subEntries, setSubEntries] = useState(dictionary.sub_entries || []); // Initialize sub-entries
+    const [subEntries, setSubEntries] = useState(dictionary.sub_entries || []); 
+    const [imageFile, setImageFile] = useState(null);
 
-    const handleClear = () => {
-        signWord.clear();
-        setNewSign(null);
-    };
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
 
-    const handleSave = () => {
-        setNewSign(signWord.getTrimmedCanvas().toDataURL('image/png'));
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setDictionary({ ...getDictionary, sign: event.target.result });
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleAddSubEntry = () => {
@@ -40,22 +43,27 @@ const Edit = ({ dictionary }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-
+    
         try {
-            const signatureImage = signWord && !signWord.isEmpty()
-                ? signWord.getTrimmedCanvas().toDataURL('image/png')
-                : newSign;
-            setNewSign(signatureImage);
-
-            const response = await axios.post(route('grammalogues-edit', getDictionary.id), {
-                word: getDictionary.word,
-                description: getDictionary.description,
-                sub_entries: subEntries,
-                sign: signatureImage,
-                clearSign: signWord && signWord.isEmpty() ? true : false,
+            // Create a FormData object to handle the file upload
+            const formData = new FormData();
+            
+            // Append regular data to FormData
+            formData.append('word', getDictionary.word);
+            formData.append('description', getDictionary.description);
+            if (subEntries && subEntries.length > 0) {
+                formData.append('sub_entries', JSON.stringify(subEntries));
+            }
+            if (imageFile) {
+                formData.append('sign', imageFile);  
+            }
+    
+            const response = await axios.post(route('grammalogues-edit', getDictionary.id), formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
+    
         } catch (error) {
-            console.error('Error updating dictionary:', error);
+            console.error('Error updating grammalogues:', error);
             alert('Failed to update dictionary. Please try again.');
         } finally {
             setIsLoading(false);
@@ -64,7 +72,7 @@ const Edit = ({ dictionary }) => {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Edit Dictionary" />
+            <Head title="Edit Grammalogues" />
 
             <div className="">
                 <form onSubmit={handleSubmit}>
@@ -99,30 +107,21 @@ const Edit = ({ dictionary }) => {
                             {/* Signature */}
                             <div className="bg-white shadow-md rounded-lg p-6 relative border-2 mt-3 mb-3">
                                 <label htmlFor="wordSign" className="form-label">Word Signature</label>
-                                {newSign && 
-                                    <img src={`https://azadshorthand.com/admin/public/${newSign}`} alt="Signature" className="my-3" />
-
-                                }
-                                <SignatureCanvas
-                                    canvasProps={{ className: 'sigCanvas' }}
-                                    ref={(data) => setSign(data)}
-                                    minWidth={0.3}
-                                    maxWidth={1.5}
+                                {getDictionary.sign && (
+                                    <img
+                                        src={getDictionary.sign}
+                                        alt="Preview"
+                                        className="my-3 w-50 h-100"
+                                        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                    />
+                                )}
+                                <input
+                                    id="wordImage"
+                                    type="file"
+                                    className="form-control rounded-1 border-2 p-2"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
                                 />
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary mt-3"
-                                    onClick={handleClear}
-                                >
-                                    Clear sign
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-success mt-3 ms-2"
-                                    onClick={handleSave}
-                                >
-                                    Check Sign
-                                </button>
                             </div>
 
                             {/* Sub Entries */}

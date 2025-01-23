@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\RulesOutline;
 use App\Models\TypeRulesOutline;
+use Storage;
 
 class RulesOutlinesController extends Controller
 {
@@ -47,66 +48,101 @@ class RulesOutlinesController extends Controller
             $request->validate([
                 'sentence' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'image' => 'nullable|string',
+                'image' => 'nullable',
                 'wordSections' => 'nullable|array',
                 'wordSections.*.word' => 'nullable|string|max:255',
                 'wordSections.*.description' => 'nullable|string',
-                'wordSections.*.signature' => 'nullable|string',
+                'wordSections.*.signature' => 'nullable',
             ]);
-    
+        
             try {
                 // Update the main RulesOutline record
                 $dictation = RulesOutline::findOrFail($id);
                 $dictation->sentence = $request->input('sentence');
                 $dictation->description = $request->input('description');
+        
+                // Handle main image
+                if ($request->hasFile('image')) {
+                    // Get the uploaded file
+                    $file = $request->file('image');
                 
-                if ($request->input('signatureImage')) {
-                    $imageData = $request->input('signatureImage');
-                    $imagePath = public_path("images/rulesOutlines/{$dictation->id}_rulesoutlines.png");
-                    $imageContent = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $imageData));
-                    file_put_contents($imagePath, $imageContent);
-                    $dictation->image = "/images/rulesOutlines/{$dictation->id}_rulesoutlines.png";
-                } elseif ($request->has('clearSign') && $request->clearSign) {
-                    $dictation->image = null;
-                    $imagePath = public_path("images/rulesOutlines/{$dictation->id}_rulesoutlines.png");
+                    // Generate a unique file name with the desired directory
+                    $fileName = "{$dictation->id}_rulesoutlines." . $file->getClientOriginalExtension();
+                    $filePath = "images/rulesOutlines/{$fileName}";
                 
-                    if (file_exists($imagePath)) {
-                        unlink($imagePath); 
-                    }
-                }
-    
+                    // Store the file in the public disk
+                    $file->storeAs('images/rulesOutlines', $fileName, 'public');
+                
+                    // Save the file path to the database
+                    $dictation->image = $filePath;
+                }               
+        
                 $dictation->save();
-    
+        
                 // Handle word sections
                 $incomingIds = collect($request->input('wordSections'))->pluck('id')->filter()->toArray();
                 $existingIds = TypeRulesOutline::where('rules_outline_id', $dictation->id)->pluck('id')->toArray();
                 $idsToDelete = array_diff($existingIds, $incomingIds);
                 TypeRulesOutline::whereIn('id', $idsToDelete)->delete();
-    
-                foreach ($request->input('wordSections') as $section) {
+        
+                foreach ($request->input('wordSections') as $index => $section) {
                     $word = TypeRulesOutline::updateOrCreate(
                         ['id' => $section['id'] ?? null],
                         [
                             'rules_outline_id' => $dictation->id,
                             'word' => $section['word'],
                             'description' => $section['description'] ?? null,
-                            'signature' => $section['signature'] ?? null,
                         ]
                     );
-    
-                    if (!empty($section['signature'])) {
-                        $signatureData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $section['signature']));
-                        $signaturePath = public_path("images/rulesOutlines/{$word->id}_tyeprulesoutlines.png");
-                        
-                        if (file_put_contents($signaturePath, $signatureData)) {
-                            $word->signature = "/images/rulesOutlines/{$word->id}_tyeprulesoutlines.png";
-                            $word->save();
-                        } else {
-                            throw new \Exception("Failed to save signature for word section ID {$word->id}");
+        
+                    if (strpos($section['signatureUrl'], 'data:image') === 0) {
+                        // Extract base64 string (after 'data:image/png;base64,' part)
+                        $imageData = explode(',', $section['signatureUrl'])[1];
+                    
+                        // Decode base64
+                        $imageDecoded = base64_decode($imageData);
+                    
+                        if ($imageDecoded === false) {
+                            return response()->json(['error' => 'Invalid base64 image data'], 400);
                         }
-                    }
+                    
+                        // Generate a unique file name
+                        $fileName = "{$word->id}_tyeprulesoutlines.png";
+                        $filePath = "images/rulesOutlines/{$fileName}";
+                    
+                        // Save the file in the public disk
+                        if (!Storage::disk('public')->put($filePath, $imageDecoded)) {
+                            return response()->json(['error' => 'Failed to save image'], 500);
+                        }
+                    
+                        // Update the signature field in the database
+                        $word->signature = "/{$filePath}";
+                        $word->save();
+                    } elseif ($request->hasFile("wordSections.{$index}.signature")) {
+                        // Handle file upload case (for files uploaded via form)
+                        $file = $request->file("wordSections.{$index}.signature");
+                    
+                        // Validate the uploaded file type (e.g., image)
+                        $this->validate($request, [
+                            "wordSections.{$index}.signature" => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                        ]);
+                    
+                        // Generate a unique file name
+                        $fileName = "{$word->id}_tyeprulesoutlines." . $file->getClientOriginalExtension();
+                        $filePath = "images/rulesOutlines/{$fileName}";
+                    
+                        // Store the file in the public disk
+                        if (!$file->storeAs('images/rulesOutlines', $fileName, 'public')) {
+                            return response()->json(['error' => 'Failed to upload file'], 500);
+                        }
+                    
+                        // Update the signature field in the database
+                        $word->signature = "/{$filePath}";
+                        $word->save();
+                    }                
+                
                 }
-    
+        
                 return redirect()->route('rulesOutlines-edit', ['id' => $dictation->id])
                     ->with('success', 'Rules outlines updated successfully!');
             } catch (\Exception $e) {
@@ -115,6 +151,7 @@ class RulesOutlinesController extends Controller
                 return redirect()->back()->withErrors(['error' => 'An error occurred while updating. Please try again.']);
             }
         }
+        
     
         // Get the existing data
         $dictation = RulesOutline::with('TypeRulesOutline')->findOrFail($id);

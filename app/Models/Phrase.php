@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasImage;
 
 class Phrase extends Model
 {
+    use HasImage;
+    
     public function PhraseWord()
     {
         return $this->hasMany(PhraseWord::class);

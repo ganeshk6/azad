@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
@@ -6,35 +6,34 @@ import SignatureCanvas from 'react-signature-canvas'
 
 const Edit = ({ dictation }) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [imageFile, setImageFile] = useState(null);
     const [getDictation, setDictation] = useState(dictation);
-    const [signWord, setSign] = useState();
-    const [newSign, setNewSign] = useState(dictation.image);
+    const [imageFile, setImageFile] = useState(null);
 
-    const handleClear = () => {
-        signWord.clear();
-        setNewSign(null);
-    };
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
 
-    const handleSave = () => {
-        setNewSign(signWord.getTrimmedCanvas().toDataURL('image/png'));
+            // Preview the new image immediately
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setDictation({ ...getDictation, image: event.target.result });
+            };
+            reader.readAsDataURL(file);
+        }
     };
+    
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
 
-        const signatureImage = signWord && !signWord.isEmpty()
-                ? signWord.getTrimmedCanvas().toDataURL('image/png')
-                : newSign;
-            setNewSign(signatureImage);
-
         try {
             const formData = new FormData();
             formData.append('sentence', getDictation.sentence);
             formData.append('link', getDictation.link);
-            if (signatureImage) {
-                formData.append('image', signatureImage);
+            if (imageFile) {
+                formData.append('image', imageFile);
             }
 
             await axios.post(route('dictation-edit', getDictation.id), formData, {
@@ -87,30 +86,24 @@ const Edit = ({ dictation }) => {
                             </div>
                             <div className="bg-white shadow-md rounded-lg p-6 relative border-2 mt-3 mb-3">
                                 <label htmlFor="wordSign" className="form-label">Word Signature</label>
-                                {newSign && 
-                                    <img src={`https://azadshorthand.com/admin/public/${newSign}`} alt="Signature" className="my-3" />
-
-                                    }
-                                <SignatureCanvas
-                                    canvasProps={{ className: 'sigCanvas' }}
-                                    ref={(data) => setSign(data)}
-                                    minWidth={0.3}
-                                    maxWidth={1.5}
+                                {/* {newSign && 
+                                    <img src={`https://azadshorthand.com/admin/public${newSign}`} alt="Signature" className="my-3" />
+                                    } */}
+                                {getDictation.image && (
+                                    <img
+                                        src={getDictation.image}
+                                        alt="Preview"
+                                        className="my-3 w-50 h-100"
+                                        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                    />
+                                )}
+                                <input
+                                    id="wordImage"
+                                    type="file"
+                                    className="form-control rounded-1 border-2 p-2"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
                                 />
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary mt-3"
-                                    onClick={handleClear}
-                                >
-                                    Clear sign
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-success mt-3 ms-2"
-                                    onClick={handleSave}
-                                >
-                                    save Sign
-                                </button>
                             </div>
                         </div>
                         <div className="col-2">
