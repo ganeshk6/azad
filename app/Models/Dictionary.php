@@ -11,6 +11,7 @@ class Dictionary extends Model
 
     public function subEntries()
     {
-        return $this->hasMany(SubDictionary::class);
+        return $this->hasMany(SubDictionary::class, 'dictionary_id', 'id');
     }
+
 }

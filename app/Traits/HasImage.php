@@ -7,7 +7,7 @@ trait HasImage
     public function getImageAttribute($value)
     {
         if ($value) {
-            return asset('storage/app/public/' . $value);
+            return asset('storage/' . $value);
         }
 
         return null;
@@ -16,7 +16,7 @@ trait HasImage
     public function getSignAttribute($value)
     {
         if ($value) {
-            return asset('storage/app/public/' . $value);
+            return asset('storage/' . $value);
         }
 
         return null;
@@ -24,7 +24,7 @@ trait HasImage
     public function getSignatureAttribute($value)
     {
         if ($value) {
-            return asset('storage/app/public/' . $value);
+            return asset('storage/' . $value);
         }
 
         return null;

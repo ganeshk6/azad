@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Dictionary;
 use App\Models\SubDictionary;
+use App\Models\ChieldDictionary;
 
 class DictionaryController extends Controller
 {
@@ -44,50 +45,90 @@ class DictionaryController extends Controller
     public function dictionaryEdit(Request $request, $id)
     {
         if ($request->isMethod('post')) {
+
             $request->validate([
                 'word' => 'required|string|max:255',
-                'description' => 'nullable|string',
                 'sub_entries' => 'nullable|array',
-                'sub_entries.*.sub_word' => 'nullable|string|max:255',
-                'sub_entries.*.sub_description' => 'nullable|string',
-                'sign' => 'nullable', 
+                // 'sub_entries.*.image' => 'nullable|image',
+                // 'sub_entries.*.child_entries.*.image' => 'nullable|image',
             ]);
-
+        
             $dictionary = Dictionary::findOrFail($id);
-
-            if ($request->hasFile('sign')) {
-                $file = $request->file('sign');
-                // Generate a unique file name with the desired directory
-                $fileName = "{$dictionary->id}_dictionary." . $file->getClientOriginalExtension();
-                $filePath = "images/dictionary/{$fileName}";
-            
-                // Store the file in the public disk
-                $file->storeAs('images/dictionary', $fileName, 'public');
-            
-                // Save the file path to the database
-                $dictionary->sign = $filePath;
-            } 
-
+        
+            // Update the dictionary word
             $dictionary->word = $request->input('word');
-            $dictionary->description = $request->input('description');
             $dictionary->save();
-
-            $subEntries = json_decode($request->input('sub_entries', '[]'), true);
-            // Save sub-entries
-            $dictionary->subEntries()->delete();
-            foreach ($subEntries as $subEntry) {
-                SubDictionary::create([
-                    'dictionary_id' => $dictionary->id,
-                    'sub_word' => $subEntry['sub_word'],
-                    'sub_description' => $subEntry['sub_description'],
-                ]);
+        
+            // Delete existing sub-entries and their child entries
+            foreach ($dictionary->subEntries as $subEntry) {
+                $subEntry->childEntries()->delete(); 
+                $subEntry->delete(); 
             }
-            
+        
+            $subDictionaries = $request->input('sub_entries');
+            if(isset($subDictionaries)){
+                foreach ($subDictionaries as $subDictIndex => $subDict) {
+                    $subImagePath = $subDict['image'] ?? null;  
+                    if ($subImagePath && strpos($subImagePath, 'http') === 0) {
+                        $subImagePath = str_replace(asset('storage/'). '/', '', $subImagePath);
+                    }
+                    if ($request->hasFile("sub_entries.{$subDictIndex}.image")) {
+                        $subImage = $request->file("sub_entries.{$subDictIndex}.image");
+                        $subImageName = "sub_dict_{$subDictIndex}." . $subImage->getClientOriginalExtension();
+                        $subImagePath = "images/dictionary/sub_dictionary/{$subImageName}";
+                
+                        $subImage->storeAs('images/dictionary/sub_dictionary', $subImageName, 'public');
+                    }   
+                    $subDictionary = SubDictionary::updateOrCreate(
+                        [
+                            'id' => $subDict['id'] ?? null,
+                            'dictionary_id' => $dictionary->id,
+                        ],
+                        [
+                            'title' => $subDict['title'],
+                            'image' => $subImagePath,
+                        ]
+                    );
+                    // echo"<pre>";print_r($subDictionaries);die;
+                    if(isset($subDict['child_entries'])){
+                        foreach ($subDict['child_entries'] as $childIndex=>$child) {
+                            $childImagePath = $child['image'] ?? null;  
+                            if ($childImagePath && strpos($childImagePath, 'http') === 0) {
+                                $childImagePath = str_replace(asset('storage/').'/', '', $childImagePath);
+                            }
+                            if ($request->hasFile("sub_entries.{$subDictIndex}.child_entries.{$childIndex}.image")) {
+                                $subImage = $request->file("sub_entries.{$subDictIndex}.child_entries.{$childIndex}.image");
+                                $subImageName = "chield_dict_{$subDictIndex}." . $subImage->getClientOriginalExtension();
+                                $childImagePath = "images/dictionary/child_dictionary/{$subImageName}";
+                        
+                                $subImage->storeAs('images/dictionary/child_dictionary', $subImageName, 'public');
+                            }
+
+                            // Create or update child entry
+                            ChieldDictionary::updateOrCreate(
+                                [
+                                    'id' => $child['id'] ?? null,
+                                    'sub_dictionary_id' => $subDictionary->id,
+                                ],
+                                [
+                                    'title' => $child['title'],
+                                    'image' => $childImagePath,
+                                    'dictionary_id' => $dictionary->id,
+                                ]
+                            );
+                        }
+                    }
+                }
+            }
+        
             return redirect()->route('dictionary-edit', ['id' => $dictionary->id])
                 ->with('success', 'Dictionary updated successfully!');
         }
+        
 
-        $dictionary = Dictionary::with('subEntries')->findOrFail($id);
+        $dictionary = Dictionary::with('subEntries.childEntries')->findOrFail($id);
+
+        // echo"<pre>";print_r($dictionary->toArray());die;
 
         return Inertia::render('Dictionary/Edit', [
             'dictionary' => $dictionary,
@@ -109,9 +150,7 @@ class DictionaryController extends Controller
 
     public function dictionaryApi($id)
     {
-        $dictation = Dictionary::select('word', 'sign')->where('language_id', $id)
-        // ->with('subEntries')
-        ->get();
+        $dictation = Dictionary::with('subEntries.childEntries')->where('language_id', $id)->get();
 
         return response()->json($dictation);
     }
@@ -127,10 +166,12 @@ class DictionaryController extends Controller
     public function SearchByDictinary(Request $request)
     {
         $request->validate([
-            'word' => 'required|string'
+            'title' => 'required|string'
         ]);
 
-        $searchOutline = Dictionary::select('word', 'sign')->where('word', $request->word)->first();
+        $searchOutline = SubDictionary::where('title', $request->title)->first();
+
+        $chieldDic = ChieldDictionary::where('dictionary_id', $searchOutline->dictionary_id)->get();
 
         if (!$searchOutline) {
             return response()->json([
@@ -138,7 +179,20 @@ class DictionaryController extends Controller
             ], 404);
         }
 
-        return response()->json([$searchOutline]);
+        return response()->json([
+            'search_by'=> [$searchOutline], 
+            'similer' => $chieldDic
+        ]);
     }
+
+    public function uploadImage($image, $dictionaryId, $type)
+    {
+        $path = "images/dictionary/{$dictionaryId}/{$folder}";
+        $imageName = time() . '_' . $image->getClientOriginalName();
+        $image->move(public_path($path), $imageName);
+        return "{$path}/{$imageName}";
+        
+    }
+
 
 }
