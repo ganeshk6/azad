@@ -58,7 +58,6 @@ class DictionaryController extends Controller
             // Update the dictionary word
             $dictionary->word = $request->input('word');
             $dictionary->save();
-        
             // Delete existing sub-entries and their child entries
             foreach ($dictionary->subEntries as $subEntry) {
                 $subEntry->childEntries()->delete(); 
@@ -83,6 +82,7 @@ class DictionaryController extends Controller
                         [
                             'id' => $subDict['id'] ?? null,
                             'dictionary_id' => $dictionary->id,
+                            'language_id' => $dictionary->language_id
                         ],
                         [
                             'title' => $subDict['title'],
@@ -150,19 +150,22 @@ class DictionaryController extends Controller
 
     public function dictionaryApi($id)
     {
-        $dictation = Dictionary::with('subEntries.childEntries')->where('language_id', $id)->get();
+        $dictation = SubDictionary::select('id','title', 'image')->where('language_id', $id)->get();
 
         return response()->json($dictation);
     }
+    
+    public function subDictionaryApi($id){
+        $familierWord = SubDictionary::where('id', $id)->with('childEntries')->first();
 
-    public function subDictionaryApi($id)
-    {
-        $dictation = SubDictionary::where('dictionary_id', $id)->get();
+        $chieldDic = SubDictionary::where('id', '!=', $familierWord->id)->where('dictionary_id', $familierWord->dictionary_id)->get();
 
-        return response()->json(['dictionary' => $dictation ]);
+        return response()->json([
+            'family' => $familierWord, 
+            'similer_family' => $chieldDic
+        ]);
     }
-    
-    
+
     public function SearchByDictinary(Request $request)
     {
         $request->validate([
@@ -171,8 +174,6 @@ class DictionaryController extends Controller
 
         $searchOutline = SubDictionary::where('title', $request->title)->first();
 
-        $chieldDic = ChieldDictionary::where('dictionary_id', $searchOutline->dictionary_id)->get();
-
         if (!$searchOutline) {
             return response()->json([
                 'message' => 'No matching notes found.',
@@ -180,8 +181,7 @@ class DictionaryController extends Controller
         }
 
         return response()->json([
-            'search_by'=> [$searchOutline], 
-            'similer' => $chieldDic
+            'search_by'=> $searchOutline, 
         ]);
     }
 

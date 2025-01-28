@@ -8,7 +8,7 @@ use App\Traits\HasImage;
 class SubDictionary extends Model
 {
     use HasImage;
-    protected $fillable = ['dictionary_id', 'title', 'image'];
+    protected $fillable = ['dictionary_id', 'title', 'image', 'language_id'];
 
     public function dictionary()
     {

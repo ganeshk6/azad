@@ -41,7 +41,7 @@ Route::post('/rules-outlines-by', [OutlineController::class, 'SearchBy']);
 
 // done
 Route::get('/dictionaries/language_{id}', [DictionaryController::class, 'dictionaryApi']);
-Route::get('/sub-dictionaries/dictionary_{id}', [DictionaryController::class, 'subDictionaryApi']);
+Route::get('/familier-dictionaries/familier_{id}', [DictionaryController::class, 'subDictionaryApi']);
 Route::post('/dictionary-by', [DictionaryController::class, 'SearchByDictinary']);
 
 //done
