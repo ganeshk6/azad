@@ -37,7 +37,7 @@ Route::post('/search-by', [OutlineController::class, 'SearchBy']);
 //done
 Route::get('/rules-outlines/language_{id}', [RulesOutlinesController::class, 'rulesOutlineApi']);
 Route::get('/type-rules-outlines/rules_outline_{id}', [RulesOutlinesController::class, 'TypeOutlinesApi']);
-Route::post('/rules-outlines-by', [OutlineController::class, 'SearchBy']);
+Route::post('/rules-outlines-by', [RulesOutlinesController::class, 'SearchBy']);
 
 // done
 Route::get('/dictionaries/language_{id}', [DictionaryController::class, 'dictionaryApi']);

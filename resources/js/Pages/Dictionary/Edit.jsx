@@ -158,7 +158,7 @@ const Edit = ({ dictionary }) => {
                             {/* Sub Dictionary Section */}
                             <div className="mt-4 shadow-md rounded-lg p-6 bg-white border">
                                 <div className='d-flex justify-between mb-3 align-items-center'>
-                                    <label className="form-label h5 fw-bold">Sub Dictionary</label>
+                                    <label className="form-label h5 fw-bold">Family Words</label>
                                     <button
                                         type="button"
                                         className="p-2 rounded-0 bg-[green] text-[#fff] d-flex align-items-center"
@@ -238,7 +238,7 @@ const Edit = ({ dictionary }) => {
                                                         {/* Child Section */}
                                                     <div className="mt-3 shadow rounded-lg p-6 bg-white border">
                                                         <div className='d-flex justify-between mb-3 align-items-center'>
-                                                            <label className="form-label h5 fw-bold">Child Section</label>
+                                                            <label className="form-label h5 fw-bold">Similar Words</label>
                                                             <button
                                                                 type="button"
                                                                 className="p-2 rounded-0 bg-[green] text-[#fff] d-flex align-items-center"

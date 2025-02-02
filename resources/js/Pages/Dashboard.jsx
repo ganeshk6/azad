@@ -13,45 +13,45 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function Dashboard() {
-    // Sample data for charts
-    const subscribedData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [
-            {
-                label: 'Subscribed Students',
-                data: [120, 150, 170, 200, 250, 300],
-                backgroundColor: '#4CAF50',
-            },
-        ],
-    };
+export default function Dashboard({ users }) {
+    // Helper to get month names
+    const monthLabels = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
 
-    const unsubscribedData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [
-            {
-                label: 'Unsubscribed Students',
-                data: [20, 30, 15, 10, 8, 5],
-                backgroundColor: '#FF5722',
-            },
-        ],
-    };
+    // Initialize monthly counts
+    const monthlySubscribedCounts = new Array(12).fill(0);
+    const monthlyUnsubscribedCounts = new Array(12).fill(0);
+    const monthlyAllCounts = new Array(12).fill(0);
 
-    const allStudentsData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+   users.forEach(user => {
+        const createdAt = new Date(user.created_at); 
+        const monthIndex = createdAt.getMonth(); 
+
+        monthlyAllCounts[monthIndex]++;
+
+        if (user.isSubscribed) {
+            monthlySubscribedCounts[monthIndex]++;
+        } else {
+            monthlyUnsubscribedCounts[monthIndex]++;
+        }
+    });
+
+    const chartData = (label, data, color) => ({
+        labels: monthLabels,
         datasets: [
             {
-                label: 'All Students',
-                data: [140, 180, 185, 210, 258, 305],
-                backgroundColor: '#2196F3',
+                label,
+                data,
+                backgroundColor: color,
             },
         ],
-    };
+    });
 
     return (
         <AuthenticatedLayout>
             <Head title="Dashboard" />
-            
             <div className="py-6 bg-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Dashboard Header */}
@@ -67,20 +67,16 @@ export default function Dashboard() {
                             <h2 className="text-2xl font-semibold text-gray-800 text-center">
                                 All Students
                             </h2>
-                            <p className="mt-2 text-lg text-gray-600 text-center">
-                                Total: 305 Students
-                            </p>
-                            <Bar data={allStudentsData} />
+                            
+                            <Bar data={chartData('All Students', monthlyAllCounts, '#2196F3')} />
                         </div>
+
                         {/* Subscribed Students */}
                         <div className="bg-white shadow-md rounded-lg p-6">
                             <h2 className="text-2xl font-semibold text-gray-800 text-center">
                                 Subscribed Students
                             </h2>
-                            <p className="mt-2 text-lg text-gray-600 text-center">
-                                Total: 300 Students
-                            </p>
-                            <Bar data={subscribedData} />
+                            <Bar data={chartData('Subscribed Students', monthlySubscribedCounts, '#4CAF50')} />
                         </div>
 
                         {/* Unsubscribed Students */}
@@ -88,12 +84,30 @@ export default function Dashboard() {
                             <h2 className="text-2xl font-semibold text-gray-800 text-center">
                                 Unsubscribed Students
                             </h2>
-                            <p className="mt-2 text-lg text-gray-600 text-center">
-                                Total: 5 Students
-                            </p>
-                            <Bar data={unsubscribedData} />
+                            <Bar data={chartData('Unsubscribed Students', monthlyUnsubscribedCounts, '#FF5722')} />
                         </div>
                     </div>
+                </div>
+                <div className="col-12 mt-4 shadow p-2">
+                    <h1 className='h3 text-center'>All Users</h1>
+                    <table className='table'>
+                        <thead>
+                            <tr>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {users.map((user, index)=>(
+                                <tr>
+                                    <td>{user.first_name}</td>
+                                    <td>{user.last_name}</td>
+                                    <td>{user.email}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </AuthenticatedLayout>

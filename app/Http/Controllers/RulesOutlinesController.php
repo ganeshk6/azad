@@ -211,4 +211,22 @@ class RulesOutlinesController extends Controller
 
         return response()->json($dictation);
     }
+
+    public function SearchBy(Request $request){
+        $request->validate([
+            'sentence' => 'required|string'
+        ]);
+
+        $searchOutline = RulesOutline::select('sentence', 'image')->where('sentence', $request->sentence)->first();
+
+        if (!$searchOutline) {
+            return response()->json([
+                'message' => 'No matching notes found.',
+            ], 404);
+        }
+
+        return response()->json([
+            $searchOutline, 
+        ]);
+    }
 }

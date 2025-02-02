@@ -59,7 +59,7 @@ export default function AuthenticatedLayout({ children }) {
             <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto fixed h-screen">
                 <div className="h-16 flex items-center justify-center border-b">
                     <Link href="/">
-                    <img src="https://azadshorthand.com/admin/public/logo.jpeg" className="block h-12 w-auto fill-current text-gray-800" alt="logo"/>
+                    <img src="https://azadshorthand.com/manager/public/logo.jpeg" className="block h-12 w-auto fill-current text-gray-800" alt="logo"/>
                         {/* <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" /> */}
                     </Link>
                 </div>

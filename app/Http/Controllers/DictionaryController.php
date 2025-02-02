@@ -69,7 +69,7 @@ class DictionaryController extends Controller
                 foreach ($subDictionaries as $subDictIndex => $subDict) {
                     $subImagePath = $subDict['image'] ?? null;  
                     if ($subImagePath && strpos($subImagePath, 'http') === 0) {
-                        $subImagePath = str_replace(asset('storage/'). '/', '', $subImagePath);
+                        $subImagePath = str_replace(asset('storage/app/public/'). '/', '', $subImagePath);
                     }
                     if ($request->hasFile("sub_entries.{$subDictIndex}.image")) {
                         $subImage = $request->file("sub_entries.{$subDictIndex}.image");
@@ -94,7 +94,7 @@ class DictionaryController extends Controller
                         foreach ($subDict['child_entries'] as $childIndex=>$child) {
                             $childImagePath = $child['image'] ?? null;  
                             if ($childImagePath && strpos($childImagePath, 'http') === 0) {
-                                $childImagePath = str_replace(asset('storage/').'/', '', $childImagePath);
+                                $childImagePath = str_replace(asset('storage/app/public/').'/', '', $childImagePath);
                             }
                             if ($request->hasFile("sub_entries.{$subDictIndex}.child_entries.{$childIndex}.image")) {
                                 $subImage = $request->file("sub_entries.{$subDictIndex}.child_entries.{$childIndex}.image");

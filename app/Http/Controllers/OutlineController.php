@@ -160,25 +160,35 @@ class OutlineController extends Controller
             'notes' => 'required|string'
         ]);
 
-        $searchOutline = SearchOutline::where('notes', $request->notes)->first();
-
-        if (!$searchOutline) {
+        $searchOutlines = SearchOutline::where('notes', $request->notes)->get();
+        
+        if ($searchOutlines->isEmpty()) {
             return response()->json([
                 'message' => 'No matching notes found.',
             ], 404);
         }
-        $outline = Outline::find($searchOutline->outline_id);
 
-        $responseData = [
-            'word' => $outline->sentence,
-            'sign' => $outline->image,
-        ];
+        $results = [];
 
-        if (!$outline) {
+        foreach ($searchOutlines as $searchOutline) {
+            $outline = Outline::find($searchOutline->outline_id);
+
+            if ($outline) {
+                $results[] = [
+                    'notes' => $searchOutline->notes,
+                    'word' => $outline->sentence,
+                    'sign' => $outline->image,
+                ];
+            }
+        }
+
+        if (empty($results)) {
             return response()->json([
-                'message' => 'Associated outline not found.',
+                'message' => 'No associated outlines found for the provided notes.',
             ], 404);
         }
-        return response()->json( [$responseData]);
+
+        return response()->json($results);
     }
+
 }
