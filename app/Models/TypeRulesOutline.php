@@ -11,6 +11,6 @@ class TypeRulesOutline extends Model
     
     protected $table = 'type_rules_outlines'; 
 
-    protected $fillable = ['rules_outline_id', 'word', 'description', 'signature'];
+    protected $fillable = ['rules_outline_id', 'word', 'description', 'signature', 'language_id'];
 
 }

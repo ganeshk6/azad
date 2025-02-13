@@ -87,4 +87,41 @@ class CountryController extends Controller
         return response()->json(['message' => 'Word not found'], 404);
     }
 
+    public function getApi($id)
+    {
+        $dictation = Country::where('language_id', $id)->orderBy('letter', 'asc')->get();
+
+        $dictationData = $dictation->map(function ($item) {
+            return [
+                // 'id' => $item->id,
+                'word'=> $item->letter,
+                'sign'=> $item->sign,
+                // 'outline_search' => $item->OutlineSearch->select('notes')
+            ];
+        });
+
+        return response()->json($dictationData);
+    }
+
+    public function searchApi(Request $request)
+    {
+        $request->validate([
+            'letter' => 'required|string'
+        ]);
+
+        $searchOutline = Country::select('letter', 'sign')->where('letter', $request->letter)->first();
+
+        if (!$searchOutline) {
+            return response()->json([
+                'message' => 'No matching notes found.',
+            ], 404);
+        }
+
+        $responseData = [
+            'word' => $searchOutline->letter,
+            'sign' => $searchOutline->sign,
+        ];
+
+        return response()->json([$responseData]);
+    }
 }

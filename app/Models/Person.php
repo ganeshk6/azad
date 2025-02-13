@@ -8,5 +8,7 @@ use App\Traits\HasImage;
 class Person extends Model
 {
     use HasImage;
+
+    Protected $table = "persons";
     
 }

@@ -84,6 +84,7 @@ class RulesOutlinesController extends Controller
                     ['id' => $section['id'] ?? null],
                     [
                         'rules_outline_id' => $dictation->id,
+                        'language_id' => $dictation->language_id,
                         'word' => $section['word'],
                         'description' => $section['description'],
                     ]
@@ -186,5 +187,38 @@ class RulesOutlinesController extends Controller
         return response()->json([
             $searchOutline, 
         ]);
+    }
+
+
+    public function TypeOfOutlines($id)
+    {
+        $dictation = TypeRulesOutline::where('language_id', $id)->get();
+
+        return response()->json($dictation);
+    }
+
+    public function typeOfSearchBy(Request $request)
+    {
+        $request->validate([
+            'word' => 'required|string'
+        ]);
+
+        $searchOutline = TypeRulesOutline::where('word', $request->word)->first();
+
+        if (!$searchOutline) {
+            return response()->json([
+                'message' => 'No matching notes found.',
+            ], 404);
+        }
+
+        $responseData = [
+            'word' => $searchOutline->word,
+            'description' => $searchOutline->description,
+            'signature' => $searchOutline->signature,
+            'language_id' => $searchOutline->language_id,
+            'rules_outline_id' => $searchOutline->rules_outline_id,
+        ];
+
+        return response()->json([$responseData]);
     }
 }
