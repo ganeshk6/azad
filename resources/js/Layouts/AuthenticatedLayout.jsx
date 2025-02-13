@@ -112,6 +112,111 @@ export default function AuthenticatedLayout({ children }) {
                     >
                         Contractions
                     </NavLink>
+
+                    {/* new add  */}
+                    <NavLink
+                        href={route('word-with-preposition')}
+                        active={route().current('word-with-preposition') || route().current('word-with-preposition-edit')}
+                    >
+                        Word with preposition
+                    </NavLink>
+                    <NavLink
+                        href={route('festivals')}
+                        active={route().current('festivals') || route().current('festivals-edit')}
+                    >
+                        Festivals
+                    </NavLink>
+                    <NavLink
+                        href={route('days')}
+                        active={route().current('days') || route().current('days-edit')}
+                    >
+                        Days
+                    </NavLink>
+                    <NavLink
+                        href={route('countries')}
+                        active={route().current('countries') || route().current('countries-edit')}
+                    >
+                        Countries
+                    </NavLink>
+                    <NavLink
+                        href={route('country-foreign')}
+                        active={route().current('country-foreign') || route().current('country-foreign-edit')}
+                    >
+                        Country & foreign 
+                    </NavLink>
+                    <NavLink
+                        href={route('parties')}
+                        active={route().current('parties') || route().current('parties-edit')}
+                    >
+                        Parties
+                    </NavLink>
+                    <NavLink
+                        href={route('books')}
+                        active={route().current('books') || route().current('books-edit')}
+                    >
+                        Books
+                    </NavLink>
+                    <NavLink
+                        href={route('diseases')}
+                        active={route().current('diseases') || route().current('diseases-edit')}
+                    >
+                        Diseases
+                    </NavLink>
+                    <NavLink
+                        href={route('temples')}
+                        active={route().current('temples') || route().current('temples-edit')}
+                    >
+                        Temples
+                    </NavLink>
+                    <NavLink
+                        href={route('months')}
+                        active={route().current('months') || route().current('months-edit')}
+                    >
+                        Months
+                    </NavLink>
+                    <NavLink
+                        href={route('ministries')}
+                        active={route().current('ministries') || route().current('ministries-edit')}
+                    >
+                        Ministries
+                    </NavLink>
+                    <NavLink
+                        href={route('states')}
+                        active={route().current('states') || route().current('states-edit')}
+                    >
+                        States+
+                    </NavLink>
+                    <NavLink
+                        href={route('foreign-contries')}
+                        active={route().current('foreign-contries') || route().current('foreign-contries-edit')}
+                    >
+                        Foreign countries
+                    </NavLink>
+                    <NavLink
+                        href={route('persons')}
+                        active={route().current('persons') || route().current('persons-edit')}
+                    >
+                        Persons
+                    </NavLink>
+                    <NavLink
+                        href={route('cities')}
+                        active={route().current('cities') || route().current('cities-edit')}
+                    >
+                        Cities
+                    </NavLink>
+                    <NavLink
+                        href={route('places')}
+                        active={route().current('places') || route().current('places-edit')}
+                    >
+                        Places
+                    </NavLink>
+                    <NavLink
+                        href={route('numerical')}
+                        active={route().current('numerical') || route().current('numerical-edit')}
+                    >
+                        Numerical
+                    </NavLink>
+
                 </div>
             </aside>
 

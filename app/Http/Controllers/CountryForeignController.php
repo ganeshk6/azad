@@ -1,0 +1,90 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\CountryForeign;
+use Inertia\Inertia;
+
+class CountryForeignController extends Controller
+{
+    public function countryForeign(Request $request)
+    {
+        if ($request->isMethod('post')) {
+            $request->validate([
+                'letter' => 'required|string|max:255',
+                'languageId' => 'required|integer|exists:languages,id', 
+            ]);
+    
+            $phrases = new CountryForeign();
+            $phrases->letter = $request->input('letter');
+            $phrases->language_id = $request->input('languageId');
+            $phrases->save(); 
+    
+            return response()->json([
+                'message' => 'Word added successfully!',
+                'id' => $phrases->id,
+            ], 200);
+        }
+        return Inertia::render('CountryForeign/Index');
+    }
+    
+    public function getWords(Request $request)
+    {
+        $request->validate([
+            'languageId' => 'required|integer|exists:languages,id', 
+        ]);
+
+        $words = CountryForeign::where('language_id', $request->input('languageId'))->get();
+
+        return response()->json($words);
+    }
+
+    public function edit(Request $request, $id)
+    {
+        if ($request->isMethod('post')) {
+            $request->validate([
+                'letter' => 'required|string',
+                'sign' => 'nullable'
+            ]);
+
+            $phrase = CountryForeign::findOrFail($id);
+            $phrase->letter = $request->input('letter');
+
+            if ($request->hasFile('sign')) {
+                $file = $request->file('sign');
+                $fileName = "{$phrase->id}_country_foreign." . $file->getClientOriginalExtension();
+                $filePath = "images/CountryForeign/{$fileName}";
+
+                $file->storeAs('images/CountryForeign', $fileName, 'public');
+            
+                $phrase->sign = $filePath;
+            } 
+
+            $phrase->save();
+
+            return redirect()->route('country-foreign-edit', ['id' => $phrase->id])
+                ->with('success', 'CountryForeign updated successfully!');
+        }
+
+        $phrase = CountryForeign::findOrFail($id);
+
+        return Inertia::render('CountryForeign/Edit', [
+            'phrasesData' => [
+                'id' => $phrase->id,
+                'letter' => $phrase->letter,
+                'sign' => $phrase->sign,
+            ],
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $word = CountryForeign::find($id);
+
+        $word->delete();
+
+        return response()->json(['message' => 'Word not found'], 404);
+    }
+
+}

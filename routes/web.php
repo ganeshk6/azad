@@ -4,6 +4,23 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\DictionaryController;
 use App\Http\Controllers\PhrasesController;
+use App\Http\Controllers\WordWithPrepositionController;
+use App\Http\Controllers\FestivalController;
+use App\Http\Controllers\NumericalController;
+use App\Http\Controllers\PlaceController;
+use App\Http\Controllers\CityController;
+use App\Http\Controllers\PersonController;
+use App\Http\Controllers\StateController;
+use App\Http\Controllers\ForeignCountryController;
+use App\Http\Controllers\MinistryController;
+use App\Http\Controllers\MonthController;
+use App\Http\Controllers\TempleController;
+use App\Http\Controllers\DiseaseController;
+use App\Http\Controllers\BookController;
+use App\Http\Controllers\PartyController;
+use App\Http\Controllers\CountryController;
+use App\Http\Controllers\CountryForeignController;
+use App\Http\Controllers\DayController;
 use App\Http\Controllers\DictationController;
 use App\Http\Controllers\GrammaloguesController;
 use App\Http\Controllers\OutlineController;
@@ -78,6 +95,108 @@ Route::middleware('auth')->group(function () {
     Route::get('/contractions/words', [ContractionsController::class, 'getWords'])->name('contractions-getWords');
     Route::any('/contractions/edit/{id}', [ContractionsController::class, 'contractionsEdit'])->name('contractions-edit');
     Route::delete('/contractions/{id}', [ContractionsController::class, 'destroy'])->name('contractions-delete');
+
+    // Word with preposition outlines 
+    Route::any('/word-with-preposition', [WordWithPrepositionController::class, 'wordWithPreposition'])->name('word-with-preposition');
+    Route::get('/word-with-preposition/words', [WordWithPrepositionController::class, 'getWords'])->name('word-with-preposition-getWords');
+    Route::any('/word-with-preposition/edit/{id}', [WordWithPrepositionController::class, 'wordWithPrepositionEdit'])->name('word-with-preposition-edit');
+    Route::delete('/word-with-preposition/{id}', [WordWithPrepositionController::class, 'destroy'])->name('word-with-preposition-delete');
+
+    // festivals outlines 
+    Route::any('/festivals', [FestivalController::class, 'festival'])->name('festivals');
+    Route::get('/festivals/words', [FestivalController::class, 'getWords'])->name('festivals-getWords');
+    Route::any('/festivals/edit/{id}', [FestivalController::class, 'festivalEdit'])->name('festivals-edit');
+    Route::delete('/festivals/{id}', [FestivalController::class, 'destroy'])->name('festivals-delete');
+
+    // days outlines 
+    Route::any('/days', [DayController::class, 'days'])->name('days');
+    Route::get('/days/words', [DayController::class, 'getWords'])->name('days-getWords');
+    Route::any('/days/edit/{id}', [DayController::class, 'edit'])->name('days-edit');
+    Route::delete('/days/{id}', [DayController::class, 'destroy'])->name('days-delete');
+
+    // countries outlines 
+    Route::any('/countries', [CountryController::class, 'countries'])->name('countries');
+    Route::get('/countries/words', [CountryController::class, 'getWords'])->name('countries-getWords');
+    Route::any('/countries/edit/{id}', [CountryController::class, 'edit'])->name('countries-edit');
+    Route::delete('/countries/{id}', [CountryController::class, 'destroy'])->name('countries-delete');
+
+    // Country & foreign  outlines 
+    Route::any('/country-foreign', [CountryForeignController::class, 'countryForeign'])->name('country-foreign');
+    Route::get('/country-foreign/words', [CountryForeignController::class, 'getWords'])->name('country-foreign-getWords');
+    Route::any('/country-foreign/edit/{id}', [CountryForeignController::class, 'edit'])->name('country-foreign-edit');
+    Route::delete('/country-foreign/{id}', [CountryForeignController::class, 'destroy'])->name('country-foreign-delete');
+
+    // parties outlines 
+    Route::any('/parties', [PartyController::class, 'parties'])->name('parties');
+    Route::get('/parties/words', [PartyController::class, 'getWords'])->name('parties-getWords');
+    Route::any('/parties/edit/{id}', [PartyController::class, 'edit'])->name('parties-edit');
+    Route::delete('/parties/{id}', [PartyController::class, 'destroy'])->name('parties-delete');
+
+    // books outlines 
+    Route::any('/books', [BookController::class, 'books'])->name('books');
+    Route::get('/books/words', [BookController::class, 'getWords'])->name('books-getWords');
+    Route::any('/books/edit/{id}', [BookController::class, 'edit'])->name('books-edit');
+    Route::delete('/books/{id}', [BookController::class, 'destroy'])->name('books-delete');
+
+    // diseases outlines 
+    Route::any('/diseases', [DiseaseController::class, 'diseases'])->name('diseases');
+    Route::get('/diseases/words', [DiseaseController::class, 'getWords'])->name('diseases-getWords');
+    Route::any('/diseases/edit/{id}', [DiseaseController::class, 'edit'])->name('diseases-edit');
+    Route::delete('/diseases/{id}', [DiseaseController::class, 'destroy'])->name('diseases-delete');
+
+    // temples outlines 
+    Route::any('/temples', [TempleController::class, 'temples'])->name('temples');
+    Route::get('/temples/words', [TempleController::class, 'getWords'])->name('temples-getWords');
+    Route::any('/temples/edit/{id}', [TempleController::class, 'edit'])->name('temples-edit');
+    Route::delete('/temples/{id}', [TempleController::class, 'destroy'])->name('temples-delete');
+
+    // months outlines 
+    Route::any('/months', [MonthController::class, 'months'])->name('months');
+    Route::get('/months/words', [MonthController::class, 'getWords'])->name('months-getWords');
+    Route::any('/months/edit/{id}', [MonthController::class, 'edit'])->name('months-edit');
+    Route::delete('/months/{id}', [MonthController::class, 'destroy'])->name('months-delete');
+
+    // ministries outlines 
+    Route::any('/ministries', [MinistryController::class, 'ministries'])->name('ministries');
+    Route::get('/ministries/words', [MinistryController::class, 'getWords'])->name('ministries-getWords');
+    Route::any('/ministries/edit/{id}', [MinistryController::class, 'edit'])->name('ministries-edit');
+    Route::delete('/ministries/{id}', [MinistryController::class, 'destroy'])->name('ministries-delete');
+
+    // states outlines 
+    Route::any('/states', [StateController::class, 'states'])->name('states');
+    Route::get('/states/words', [StateController::class, 'getWords'])->name('states-getWords');
+    Route::any('/states/edit/{id}', [StateController::class, 'edit'])->name('states-edit');
+    Route::delete('/states/{id}', [StateController::class, 'destroy'])->name('states-delete');
+    
+    // Foreign countries  outlines 
+    Route::any('/foreign-contries', [ForeignCountryController::class, 'foreignContries'])->name('foreign-contries');
+    Route::get('/foreign-contries/words', [ForeignCountryController::class, 'getWords'])->name('foreign-contries-getWords');
+    Route::any('/foreign-contries/edit/{id}', [ForeignCountryController::class, 'edit'])->name('foreign-contries-edit');
+    Route::delete('/foreign-contries/{id}', [ForeignCountryController::class, 'destroy'])->name('foreign-contries-delete');
+
+    // persons outlines 
+    Route::any('/persons', [PersonController::class, 'persons'])->name('persons');
+    Route::get('/persons/words', [PersonController::class, 'getWords'])->name('persons-getWords');
+    Route::any('/persons/edit/{id}', [PersonController::class, 'edit'])->name('persons-edit');
+    Route::delete('/persons/{id}', [PersonController::class, 'destroy'])->name('persons-delete');
+
+    // cities outlines 
+    Route::any('/cities', [CityController::class, 'cities'])->name('cities');
+    Route::get('/cities/words', [CityController::class, 'getWords'])->name('cities-getWords');
+    Route::any('/cities/edit/{id}', [CityController::class, 'edit'])->name('cities-edit');
+    Route::delete('/cities/{id}', [CityController::class, 'destroy'])->name('cities-delete');
+
+    // places outlines 
+    Route::any('/places', [PlaceController::class, 'places'])->name('places');
+    Route::get('/places/words', [PlaceController::class, 'getWords'])->name('places-getWords');
+    Route::any('/places/edit/{id}', [PlaceController::class, 'edit'])->name('places-edit');
+    Route::delete('/places/{id}', [PlaceController::class, 'destroy'])->name('places-delete');
+
+    // numerical outlines 
+    Route::any('/numerical', [NumericalController::class, 'numerical'])->name('numerical');
+    Route::get('/numerical/words', [NumericalController::class, 'getWords'])->name('numerical-getWords');
+    Route::any('/numerical/edit/{id}', [NumericalController::class, 'edit'])->name('numerical-edit');
+    Route::delete('/numerical/{id}', [NumericalController::class, 'destroy'])->name('numerical-delete');
 
 });
 

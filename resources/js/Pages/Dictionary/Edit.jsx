@@ -169,7 +169,7 @@ const Edit = ({ dictionary }) => {
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-plus-lg text-white me-2" viewBox="0 0 16 16">
                                             <path fillRule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
                                         </svg>
-                                        Add More
+                                        Add family words
                                     </button>
                                 </div>
                                 <div className="accordion" id="accordionExample">
@@ -205,7 +205,7 @@ const Edit = ({ dictionary }) => {
                                                 <div className="accordion-body">
                                                     <div className="d-flex justify-content-between align-items-center gap-2">
                                                         <div className='w-100'>
-                                                            <label htmlFor="" className="form-label">Sub Dictonary Title</label>
+                                                            <label htmlFor="" className="form-label">Family Word Title</label>
                                                             <input
                                                                 type="text"
                                                                 placeholder="Sub Dictionary Title"
@@ -221,7 +221,7 @@ const Edit = ({ dictionary }) => {
                                                             />
                                                         </div>
                                                     </div>
-                                                    <label htmlFor="" className="form-label">Sub Dictonary Image</label>
+                                                    <label htmlFor="" className="form-label">Family Word Image</label>
                                                     {subDict.image && <img src={subDict.image} alt="Preview" className="img-thumbnail w-50" />}
                                                     <input
                                                         type="file"
@@ -249,7 +249,7 @@ const Edit = ({ dictionary }) => {
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-plus-lg text-white me-2" viewBox="0 0 16 16">
                                                                     <path fillRule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
                                                                 </svg>
-                                                                Add Child
+                                                                Add similar words
                                                             </button>
                                                         </div>
                                                         {subDict.child_entries.map((child, childIndex) => (
@@ -259,7 +259,7 @@ const Edit = ({ dictionary }) => {
                                                             >
                                                                 <div className="d-flex justify-content-between align-items-center gap-2">
                                                                     <div className='w-100'>
-                                                                        <label htmlFor="wordTitle" className="form-label">Sub Child Title</label>
+                                                                        <label htmlFor="wordTitle" className="form-label">Similar Word Title</label>
                                                                         <input
                                                                             type="text"
                                                                             placeholder="Child Title"
@@ -290,7 +290,7 @@ const Edit = ({ dictionary }) => {
                                                                         </svg>
                                                                     </button>
                                                                 </div>
-                                                                <label htmlFor="" className="form-label">Sub Child Image</label>
+                                                                <label htmlFor="" className="form-label">Similar Word Image</label>
                                                                 {child.image && <img src={child.image} alt="Preview" className="img-thumbnail mb-2 w-50" />}
                                                                 <input
                                                                     type="file"

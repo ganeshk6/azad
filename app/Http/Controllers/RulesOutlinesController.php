@@ -43,138 +43,96 @@ class RulesOutlinesController extends Controller
     }
 
     public function rulesOutlinesEdit(Request $request, $id)
-    {
-        if ($request->isMethod('post')) {
-            $request->validate([
-                'sentence' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'image' => 'nullable',
-                'wordSections' => 'nullable|array',
-                'wordSections.*.word' => 'nullable|string|max:255',
-                'wordSections.*.description' => 'nullable|string',
-                'wordSections.*.signature' => 'nullable',
-            ]);
-        
-            try {
-                // Update the main RulesOutline record
-                $dictation = RulesOutline::findOrFail($id);
-                $dictation->sentence = $request->input('sentence');
-                $dictation->description = $request->input('description');
-        
-                // Handle main image
-                if ($request->hasFile('image')) {
-                    // Get the uploaded file
-                    $file = $request->file('image');
-                
-                    // Generate a unique file name with the desired directory
-                    $fileName = "{$dictation->id}_rulesoutlines." . $file->getClientOriginalExtension();
-                    $filePath = "images/rulesOutlines/{$fileName}";
-                
-                    // Store the file in the public disk
-                    $file->storeAs('images/rulesOutlines', $fileName, 'public');
-                
-                    // Save the file path to the database
-                    $dictation->image = $filePath;
-                }               
-        
-                $dictation->save();
-        
-                // Handle word sections
-                $incomingIds = collect($request->input('wordSections'))->pluck('id')->filter()->toArray();
-                $existingIds = TypeRulesOutline::where('rules_outline_id', $dictation->id)->pluck('id')->toArray();
-                $idsToDelete = array_diff($existingIds, $incomingIds);
-                TypeRulesOutline::whereIn('id', $idsToDelete)->delete();
-        
-                foreach ($request->input('wordSections') as $index => $section) {
-                    $word = TypeRulesOutline::updateOrCreate(
-                        ['id' => $section['id'] ?? null],
-                        [
-                            'rules_outline_id' => $dictation->id,
-                            'word' => $section['word'],
-                            'description' => $section['description'] ?? null,
-                        ]
-                    );
-        
-                    if (strpos($section['signatureUrl'], 'data:image') === 0) {
-                        // Extract base64 string (after 'data:image/png;base64,' part)
-                        $imageData = explode(',', $section['signatureUrl'])[1];
-                    
-                        // Decode base64
-                        $imageDecoded = base64_decode($imageData);
-                    
-                        if ($imageDecoded === false) {
-                            return response()->json(['error' => 'Invalid base64 image data'], 400);
-                        }
-                    
-                        // Generate a unique file name
-                        $fileName = "{$word->id}_tyeprulesoutlines.png";
-                        $filePath = "images/rulesOutlines/{$fileName}";
-                    
-                        // Save the file in the public disk
-                        if (!Storage::disk('public')->put($filePath, $imageDecoded)) {
-                            return response()->json(['error' => 'Failed to save image'], 500);
-                        }
-                    
-                        // Update the signature field in the database
-                        $word->signature = "/{$filePath}";
-                        $word->save();
-                    } elseif ($request->hasFile("wordSections.{$index}.signature")) {
-                        // Handle file upload case (for files uploaded via form)
-                        $file = $request->file("wordSections.{$index}.signature");
-                    
-                        // Validate the uploaded file type (e.g., image)
-                        $this->validate($request, [
-                            "wordSections.{$index}.signature" => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                        ]);
-                    
-                        // Generate a unique file name
-                        $fileName = "{$word->id}_tyeprulesoutlines." . $file->getClientOriginalExtension();
-                        $filePath = "images/rulesOutlines/{$fileName}";
-                    
-                        // Store the file in the public disk
-                        if (!$file->storeAs('images/rulesOutlines', $fileName, 'public')) {
-                            return response()->json(['error' => 'Failed to upload file'], 500);
-                        }
-                    
-                        // Update the signature field in the database
-                        $word->signature = "/{$filePath}";
-                        $word->save();
-                    }                
-                
-                }
-        
-                return redirect()->route('rulesOutlines-edit', ['id' => $dictation->id])
-                    ->with('success', 'Rules outlines updated successfully!');
-            } catch (\Exception $e) {
-                // Log the error for debugging
-                \Log::error("Error updating rules outlines: " . $e->getMessage());
-                return redirect()->back()->withErrors(['error' => 'An error occurred while updating. Please try again.']);
-            }
-        }
-        
-    
-        // Get the existing data
-        $dictation = RulesOutline::with('TypeRulesOutline')->findOrFail($id);
-    
-        $phrasesData = [
-            'id' => $dictation->id,
-            'sentence' => $dictation->sentence,
-            'description' => $dictation->description,
-            'image' => $dictation->image,
-            'wordSections' => $dictation->TypeRulesOutline->map(function ($word) {
-                return [
-                    'id' => $word->id,
-                    'word' => $word->word,
-                    'description' => $word->description,
-                    'signature' => $word->signature,
-                ];
-            }),
-        ];
-    
-        return Inertia::render('RulesOutline/Edit', [
-            'phrasesData' => $phrasesData,
+{
+    if ($request->isMethod('post')) {
+        $request->validate([
+            'sentence' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'wordSections' => 'nullable|array',
+            'wordSections.*.word' => 'nullable|string|max:255',
+            'wordSections.*.description' => 'nullable|string',
+            'wordSections.*.signature' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
+
+        try {
+            $dictation = RulesOutline::findOrFail($id);
+            $dictation->sentence = $request->input('sentence');
+            $dictation->description = $request->input('description');
+
+            // Handle main image upload
+            if ($request->hasFile('image')) {
+                $file = $request->file('image');
+                $fileName = "{$dictation->id}_rulesoutlines." . $file->getClientOriginalExtension();
+                $filePath = "images/rulesOutlines/{$fileName}";
+
+                // Store the file in public storage
+                $file->storeAs('images/rulesOutlines', $fileName, 'public');
+                $dictation->image = "/{$filePath}";
+            }
+
+            $dictation->save();
+
+            // Handle word sections
+            $incomingIds = collect($request->input('wordSections'))->pluck('id')->filter()->toArray();
+            $existingIds = TypeRulesOutline::where('rules_outline_id', $dictation->id)->pluck('id')->toArray();
+            $idsToDelete = array_diff($existingIds, $incomingIds);
+            TypeRulesOutline::whereIn('id', $idsToDelete)->delete();
+
+            foreach ($request->input('wordSections') as $index => $section) {
+                $word = TypeRulesOutline::updateOrCreate(
+                    ['id' => $section['id'] ?? null],
+                    [
+                        'rules_outline_id' => $dictation->id,
+                        'word' => $section['word'],
+                        'description' => $section['description'],
+                    ]
+                );
+
+                // Handle signature upload
+                if ($request->hasFile("wordSections.{$index}.signature")) {
+                    $file = $request->file("wordSections.{$index}.signature");
+                    $fileName = "{$word->id}_tyeprulesoutlines." . $file->getClientOriginalExtension();
+                    $filePath = "images/rulesOutlines/{$fileName}";
+
+                    // Store file
+                    $file->storeAs('images/rulesOutlines', $fileName, 'public');
+                    $word->signature = "/{$filePath}";
+                    $word->save();
+                }
+            }
+
+            return redirect()->route('rulesOutlines-edit', ['id' => $dictation->id])
+                ->with('success', 'Rules outlines updated successfully!');
+        } catch (\Exception $e) {
+            \Log::error("Error updating rules outlines: " . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'An error occurred while updating. Please try again.']);
+        }
     }
+
+    // Get the existing data
+    $dictation = RulesOutline::with('TypeRulesOutline')->findOrFail($id);
+
+    $phrasesData = [
+        'id' => $dictation->id,
+        'sentence' => $dictation->sentence,
+        'description' => $dictation->description,
+        'image' => $dictation->image,
+        'wordSections' => $dictation->TypeRulesOutline->map(function ($word) {
+            return [
+                'id' => $word->id,
+                'word' => $word->word,
+                'description' => $word->description,
+                'signature' => $word->signature,
+            ];
+        }),
+    ];
+
+    return Inertia::render('RulesOutline/Edit', [
+        'phrasesData' => $phrasesData,
+    ]);
+}
+
     
 
     public function destroy($id)

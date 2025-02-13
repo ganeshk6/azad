@@ -66,60 +66,61 @@ class DictionaryController extends Controller
         
             $subDictionaries = $request->input('sub_entries');
             if(isset($subDictionaries)){
-                foreach ($subDictionaries as $subDictIndex => $subDict) {
-                    $subImagePath = $subDict['image'] ?? null;  
-                    if ($subImagePath && strpos($subImagePath, 'http') === 0) {
-                        $subImagePath = str_replace(asset('storage/app/public/'). '/', '', $subImagePath);
-                    }
-                    if ($request->hasFile("sub_entries.{$subDictIndex}.image")) {
-                        $subImage = $request->file("sub_entries.{$subDictIndex}.image");
-                        $subImageName = "sub_dict_{$subDictIndex}." . $subImage->getClientOriginalExtension();
-                        $subImagePath = "images/dictionary/sub_dictionary/{$subImageName}";
-                
-                        $subImage->storeAs('images/dictionary/sub_dictionary', $subImageName, 'public');
-                    }   
-                    $subDictionary = SubDictionary::updateOrCreate(
-                        [
-                            'id' => $subDict['id'] ?? null,
-                            'dictionary_id' => $dictionary->id,
-                            'language_id' => $dictionary->language_id
-                        ],
-                        [
-                            'title' => $subDict['title'],
-                            'image' => $subImagePath,
-                        ]
-                    );
-                    // echo"<pre>";print_r($subDictionaries);die;
-                    if(isset($subDict['child_entries'])){
-                        foreach ($subDict['child_entries'] as $childIndex=>$child) {
-                            $childImagePath = $child['image'] ?? null;  
-                            if ($childImagePath && strpos($childImagePath, 'http') === 0) {
-                                $childImagePath = str_replace(asset('storage/app/public/').'/', '', $childImagePath);
-                            }
-                            if ($request->hasFile("sub_entries.{$subDictIndex}.child_entries.{$childIndex}.image")) {
-                                $subImage = $request->file("sub_entries.{$subDictIndex}.child_entries.{$childIndex}.image");
-                                $subImageName = "chield_dict_{$subDictIndex}." . $subImage->getClientOriginalExtension();
-                                $childImagePath = "images/dictionary/child_dictionary/{$subImageName}";
-                        
-                                $subImage->storeAs('images/dictionary/child_dictionary', $subImageName, 'public');
-                            }
+    foreach ($subDictionaries as $subDictIndex => $subDict) {
+        $subImagePath = $subDict['image'] ?? null;  
+        if ($subImagePath && strpos($subImagePath, 'http') === 0) {
+            $subImagePath = str_replace(asset('storage/app/public/'). '/', '', $subImagePath);
+        }
+        if ($request->hasFile("sub_entries.{$subDictIndex}.image")) {
+            $subImage = $request->file("sub_entries.{$subDictIndex}.image");
+            $subImageName = "sub_dict_" . uniqid() . "." . $subImage->getClientOriginalExtension();
+            $subImagePath = "images/dictionary/sub_dictionary/{$subImageName}";
 
-                            // Create or update child entry
-                            ChieldDictionary::updateOrCreate(
-                                [
-                                    'id' => $child['id'] ?? null,
-                                    'sub_dictionary_id' => $subDictionary->id,
-                                ],
-                                [
-                                    'title' => $child['title'],
-                                    'image' => $childImagePath,
-                                    'dictionary_id' => $dictionary->id,
-                                ]
-                            );
-                        }
-                    }
+            $subImage->storeAs('images/dictionary/sub_dictionary', $subImageName, 'public');
+        }   
+        $subDictionary = SubDictionary::updateOrCreate(
+            [
+                'id' => $subDict['id'] ?? null,
+                'dictionary_id' => $dictionary->id,
+                'language_id' => $dictionary->language_id
+            ],
+            [
+                'title' => $subDict['title'],
+                'image' => $subImagePath,
+            ]
+        );
+
+        if(isset($subDict['child_entries'])){
+            foreach ($subDict['child_entries'] as $childIndex => $child) {
+                $childImagePath = $child['image'] ?? null;  
+                if ($childImagePath && strpos($childImagePath, 'http') === 0) {
+                    $childImagePath = str_replace(asset('storage/app/public/').'/', '', $childImagePath);
                 }
+                if ($request->hasFile("sub_entries.{$subDictIndex}.child_entries.{$childIndex}.image")) {
+                    $subImage = $request->file("sub_entries.{$subDictIndex}.child_entries.{$childIndex}.image");
+                    $subImageName = "chield_dict_" . uniqid() . "." . $subImage->getClientOriginalExtension();
+                    $childImagePath = "images/dictionary/child_dictionary/{$subImageName}";
+
+                    $subImage->storeAs('images/dictionary/child_dictionary', $subImageName, 'public');
+                }
+
+                // Create or update child entry
+                ChieldDictionary::updateOrCreate(
+                    [
+                        'id' => $child['id'] ?? null,
+                        'sub_dictionary_id' => $subDictionary->id,
+                    ],
+                    [
+                        'title' => $child['title'],
+                        'image' => $childImagePath,
+                        'dictionary_id' => $dictionary->id,
+                    ]
+                );
             }
+        }
+    }
+}
+
         
             return redirect()->route('dictionary-edit', ['id' => $dictionary->id])
                 ->with('success', 'Dictionary updated successfully!');

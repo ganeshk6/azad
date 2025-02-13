@@ -14,13 +14,7 @@ const Edit = ({ phrasesData }) => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setImageFile(file);
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                setPhrase({ ...getPhrase, image: event.target.result });
-            };
-            reader.readAsDataURL(file);
+            setImageFile(file); // Store the file directly
         }
     };
 
@@ -53,13 +47,11 @@ const Edit = ({ phrasesData }) => {
     const handleSubsectionImageChange = (id, e) => {
         const file = e.target.files[0];
         if (file) {
-            handleFileUpload(file, (signature) => {
-                setWordSections((sections) =>
-                    sections.map((section) =>
-                        section.id === id ? { ...section, signature } : section
-                    )
-                );
-            });
+            setWordSections((sections) =>
+                sections.map((section) =>
+                    section.id === id ? { ...section, signature: file } : section
+                )
+            );
         }
     };
 
@@ -72,7 +64,7 @@ const Edit = ({ phrasesData }) => {
             formData.append("sentence", getPhrase.sentence);
             formData.append("description", getPhrase.description);
             if (imageFile) {
-                formData.append('image', imageFile);  
+                formData.append('image', imageFile);
             }
             wordSection.forEach((section, index) => {
                 formData.append(`wordSections[${index}][id]`, section.id);
@@ -80,8 +72,6 @@ const Edit = ({ phrasesData }) => {
                 formData.append(`wordSections[${index}][description]`, section.description);
                 if (section.signature instanceof File) {
                     formData.append(`wordSections[${index}][signature]`, section.signature);
-                } else if (section.signature && typeof section.signature === "string") {
-                    formData.append(`wordSections[${index}][signatureUrl]`, section.signature);
                 }
             });
     
@@ -163,7 +153,7 @@ const Edit = ({ phrasesData }) => {
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-plus-lg text-white me-2" viewBox="0 0 16 16">
                                             <path fillRule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
                                         </svg>
-                                        Add More Word
+                                        Add rule type
                                     </button>
                                 </div>
                                 <div className="accordion" id="accordionExample">
@@ -199,20 +189,21 @@ const Edit = ({ phrasesData }) => {
                                                 <div className="accordion-body">
                                                     <div className="mb-3">
                                                         <label htmlFor={`letter-${section.id}`} className="form-label">
-                                                            Word of Letter
+                                                            Rule Title
                                                         </label>
                                                         <input
                                                             id={`letter-${section.id}`}
                                                             type="text"
                                                             className="form-control rounded-1"
                                                             placeholder="Enter word title"
+                                                            required
                                                             value={section.word}
                                                             onChange={(e) => handleChange(section.id, 'word', e.target.value)}
                                                         />
                                                     </div>
                                                     <div className="mb-3">
                                                         <label htmlFor={`description-${section.id}`} className="form-label">
-                                                            Description of Word
+                                                            Rule Description
                                                         </label>
                                                         <CKEditor
                                                             editor={ClassicEditor}
@@ -226,7 +217,7 @@ const Edit = ({ phrasesData }) => {
                                                     </div>
                                                     <div className="mb-3">
                                                         <label htmlFor={`signature-${section.id}`} className="form-label">
-                                                            Word Signature
+                                                            Rule Signature
                                                         </label>
                                                         {section.signature && (
                                                             <img
