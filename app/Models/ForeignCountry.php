@@ -8,5 +8,8 @@ use App\Traits\HasImage;
 class ForeignCountry extends Model
 {
     use HasImage;
-    
+    public function SubForeignCountry()
+    {
+        return $this->hasMany(SubForeignCountry::class);
+    }
 }

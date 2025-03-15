@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ForeignCountry;
+use App\Models\SubForeignCountry;
 use Inertia\Inertia;
 
 class ForeignCountryController extends Controller
@@ -45,7 +46,10 @@ class ForeignCountryController extends Controller
         if ($request->isMethod('post')) {
             $request->validate([
                 'letter' => 'required|string',
-                'sign' => 'nullable'
+                'sign' => 'nullable',
+                'SubForeignCountry' => 'nullable|array',
+                'SubForeignCountry.*.title' => 'nullable|string',
+                'SubForeignCountry.*.image' => 'nullable|image',
             ]);
 
             $phrase = ForeignCountry::findOrFail($id);
@@ -63,6 +67,36 @@ class ForeignCountryController extends Controller
 
             $phrase->save();
 
+            // Handle word sections
+            $incomingIds = collect($request->input('SubForeignCountry'))->pluck('id')->filter()->toArray();
+            $existingIds = SubForeignCountry::where('foreign_country_id', $phrase->id)->pluck('id')->toArray();
+            $idsToDelete = array_diff($existingIds, $incomingIds);
+            SubForeignCountry::whereIn('id', $idsToDelete)->delete();
+
+            foreach ($request->input('SubForeignCountry') as $index => $section) {
+                $word = SubForeignCountry::updateOrCreate(
+                    ['id' => $section['id'] ?? null],
+                    [
+                        'foreign_country_id' => $phrase->id,
+                        'language_id' => $phrase->language_id,
+                        'title' => $section['title'],
+                    ]
+                );
+
+                // Handle signature upload
+                if ($request->hasFile("SubForeignCountry.{$index}.image")) {
+                    $file = $request->file("SubForeignCountry.{$index}.image");
+                    // echo"<pre>";print_r($file);die;
+                    $fileName = "{$word->id}_subday." . $file->getClientOriginalExtension();
+                    $filePath = "images/SubForeignCountry/{$fileName}";
+
+                    // Store file
+                    $file->storeAs('images/SubForeignCountry', $fileName, 'public');
+                    $word->image = "/{$filePath}";
+                    $word->save();
+                }
+            }
+
             return redirect()->route('foreign-contries-edit', ['id' => $phrase->id])
                 ->with('success', 'ForeignCountry updated successfully!');
         }
@@ -74,6 +108,13 @@ class ForeignCountryController extends Controller
                 'id' => $phrase->id,
                 'letter' => $phrase->letter,
                 'sign' => $phrase->sign,
+                'SubForeignCountry' => $phrase->SubForeignCountry->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
             ],
         ]);
     }
@@ -89,13 +130,20 @@ class ForeignCountryController extends Controller
 
     public function getApi($id)
     {
-        $dictation = ForeignCountry::where('language_id', $id)->orderBy('letter', 'asc')->get();
+        $dictation = ForeignCountry::with('SubForeignCountry')->where('language_id', $id)->orderBy('letter', 'asc')->get();
 
         $dictationData = $dictation->map(function ($item) {
             return [
                 // 'id' => $item->id,
                 'word'=> $item->letter,
                 'sign'=> $item->sign,
+                'sub_foreign_country' => $item->SubForeignCountry->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
                 // 'outline_search' => $item->OutlineSearch->select('notes')
             ];
         });
@@ -109,7 +157,7 @@ class ForeignCountryController extends Controller
             'letter' => 'required|string'
         ]);
 
-        $searchOutline = ForeignCountry::select('letter', 'sign')->where('letter', $request->letter)->first();
+        $searchOutline = ForeignCountry::with('SubForeignCountry')->where('letter', $request->letter)->first();
 
         if (!$searchOutline) {
             return response()->json([
@@ -120,6 +168,13 @@ class ForeignCountryController extends Controller
         $responseData = [
             'word' => $searchOutline->letter,
             'sign' => $searchOutline->sign,
+            'sub_foreign_country' => $searchOutline->SubForeignCountry->map(function ($sunday) {
+                return [
+                    'id' => $sunday->id,
+                    'title' => $sunday->title,
+                    'image' => $sunday->image,
+                ];
+            }),
         ];
 
         return response()->json([$responseData]);

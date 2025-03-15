@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Country;
+use App\Models\SubCountry;
 use Inertia\Inertia;
 
 class CountryController extends Controller
@@ -45,7 +46,10 @@ class CountryController extends Controller
         if ($request->isMethod('post')) {
             $request->validate([
                 'letter' => 'required|string',
-                'sign' => 'nullable'
+                'sign' => 'nullable',
+                'SubCountry' => 'nullable|array',
+                'SubCountry.*.title' => 'nullable|string',
+                'SubCountry.*.image' => 'nullable|image',
             ]);
 
             $phrase = Country::findOrFail($id);
@@ -63,6 +67,37 @@ class CountryController extends Controller
 
             $phrase->save();
 
+            // Handle word sections
+            $incomingIds = collect($request->input('SubCountry'))->pluck('id')->filter()->toArray();
+            $existingIds = SubCountry::where('country_id', $phrase->id)->pluck('id')->toArray();
+            $idsToDelete = array_diff($existingIds, $incomingIds);
+            SubCountry::whereIn('id', $idsToDelete)->delete();
+
+            foreach ($request->input('SubCountry') as $index => $section) {
+                $word = SubCountry::updateOrCreate(
+                    ['id' => $section['id'] ?? null],
+                    [
+                        'country_id' => $phrase->id,
+                        'language_id' => $phrase->language_id,
+                        'title' => $section['title'],
+                    ]
+                );
+
+                // Handle signature upload
+                if ($request->hasFile("SubCountry.{$index}.image")) {
+                    $file = $request->file("SubCountry.{$index}.image");
+                    // echo"<pre>";print_r($file);die;
+                    $fileName = "{$word->id}_subday." . $file->getClientOriginalExtension();
+                    $filePath = "images/SubCountry/{$fileName}";
+
+                    // Store file
+                    $file->storeAs('images/SubCountry', $fileName, 'public');
+                    $word->image = "/{$filePath}";
+                    $word->save();
+                }
+            }
+
+
             return redirect()->route('countries-edit', ['id' => $phrase->id])
                 ->with('success', 'Country updated successfully!');
         }
@@ -74,6 +109,13 @@ class CountryController extends Controller
                 'id' => $phrase->id,
                 'letter' => $phrase->letter,
                 'sign' => $phrase->sign,
+                'SubCountry' => $phrase->SubCountry->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
             ],
         ]);
     }
@@ -89,13 +131,20 @@ class CountryController extends Controller
 
     public function getApi($id)
     {
-        $dictation = Country::where('language_id', $id)->orderBy('letter', 'asc')->get();
+        $dictation = Country::with('SubCountry')->where('language_id', $id)->orderBy('letter', 'asc')->get();
 
         $dictationData = $dictation->map(function ($item) {
             return [
                 // 'id' => $item->id,
                 'word'=> $item->letter,
                 'sign'=> $item->sign,
+                'sub_country' => $item->SubCountry->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
                 // 'outline_search' => $item->OutlineSearch->select('notes')
             ];
         });
@@ -109,7 +158,7 @@ class CountryController extends Controller
             'letter' => 'required|string'
         ]);
 
-        $searchOutline = Country::select('letter', 'sign')->where('letter', $request->letter)->first();
+        $searchOutline = Country::with('SubCountry')->where('letter', $request->letter)->first();
 
         if (!$searchOutline) {
             return response()->json([
@@ -120,6 +169,13 @@ class CountryController extends Controller
         $responseData = [
             'word' => $searchOutline->letter,
             'sign' => $searchOutline->sign,
+            'sub_country' => $searchOutline->SubCountry->map(function ($sunday) {
+                return [
+                    'id' => $sunday->id,
+                    'title' => $sunday->title,
+                    'image' => $sunday->image,
+                ];
+            }),
         ];
 
         return response()->json([$responseData]);

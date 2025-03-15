@@ -26,6 +26,9 @@ use App\Http\Controllers\PersonController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\PlaceController;
 use App\Http\Controllers\NumericalController;
+use App\Http\Controllers\UniqueOutlineController;
+use App\Http\Controllers\CorrectSpellingController;
+use App\Http\Controllers\NoticeController;
 
 use App\Http\Controllers\Customer\AuthController;
 
@@ -138,3 +141,11 @@ Route::post('/places-by', [PlaceController::class, 'searchApi']);
 Route::get('/numerical/language_{id}', [NumericalController::class, 'getApi']);
 Route::post('/numerical-by', [NumericalController::class, 'searchApi']);
 
+Route::get('/unique-outline/language_{id}', [UniqueOutlineController::class, 'getApi']);
+Route::post('/unique-outline-by', [UniqueOutlineController::class, 'searchApi']);
+
+Route::get('/correct-spelling/language_{id}', [CorrectSpellingController::class, 'getApi']);
+Route::post('/correct-spelling-by', [CorrectSpellingController::class, 'searchApi']);
+
+Route::get('/notices/language_{id}', [NoticeController::class, 'getApi']);
+Route::post('/notices-by', [NoticeController::class, 'searchApi']);

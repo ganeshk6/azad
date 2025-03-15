@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Day;
+use App\Models\SubDay;
 use Inertia\Inertia;
 
 class DayController extends Controller
@@ -45,7 +46,10 @@ class DayController extends Controller
         if ($request->isMethod('post')) {
             $request->validate([
                 'letter' => 'required|string',
-                'sign' => 'nullable'
+                'sign' => 'nullable',
+                'SubDay' => 'nullable|array',
+                'SubDay.*.title' => 'nullable|string',
+                'SubDay.*.image' => 'nullable|image',
             ]);
 
             $phrase = Day::findOrFail($id);
@@ -63,17 +67,54 @@ class DayController extends Controller
 
             $phrase->save();
 
+            // Handle word sections
+            $incomingIds = collect($request->input('SubDay'))->pluck('id')->filter()->toArray();
+            $existingIds = SubDay::where('day_id', $phrase->id)->pluck('id')->toArray();
+            $idsToDelete = array_diff($existingIds, $incomingIds);
+            SubDay::whereIn('id', $idsToDelete)->delete();
+
+            foreach ($request->input('SubDay') as $index => $section) {
+                $word = SubDay::updateOrCreate(
+                    ['id' => $section['id'] ?? null],
+                    [
+                        'day_id' => $phrase->id,
+                        'language_id' => $phrase->language_id,
+                        'title' => $section['title'],
+                    ]
+                );
+
+                // Handle signature upload
+                if ($request->hasFile("SubDay.{$index}.image")) {
+                    $file = $request->file("SubDay.{$index}.image");
+                    // echo"<pre>";print_r($file);die;
+                    $fileName = "{$word->id}_subday." . $file->getClientOriginalExtension();
+                    $filePath = "images/subday/{$fileName}";
+
+                    // Store file
+                    $file->storeAs('images/subday', $fileName, 'public');
+                    $word->image = "/{$filePath}";
+                    $word->save();
+                }
+            }
+
             return redirect()->route('days-edit', ['id' => $phrase->id])
                 ->with('success', 'Day updated successfully!');
         }
 
-        $phrase = Day::findOrFail($id);
+        $phrase = Day::with('SubDay')->findOrFail($id);
 
         return Inertia::render('Day/Edit', [
             'phrasesData' => [
                 'id' => $phrase->id,
                 'letter' => $phrase->letter,
                 'sign' => $phrase->sign,
+                'SubDay' => $phrase->SubDay->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
             ],
         ]);
     }
@@ -89,14 +130,20 @@ class DayController extends Controller
 
     public function getApi($id)
     {
-        $dictation = Day::where('language_id', $id)->orderBy('letter', 'asc')->get();
+        $dictation = Day::with('SubDay')->where('language_id', $id)->orderBy('letter', 'asc')->get();
 
         $dictationData = $dictation->map(function ($item) {
             return [
                 // 'id' => $item->id,
                 'word'=> $item->letter,
                 'sign'=> $item->sign,
-                // 'outline_search' => $item->OutlineSearch->select('notes')
+                'sub_day'=> $item->SubDay->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
             ];
         });
 
@@ -109,7 +156,7 @@ class DayController extends Controller
             'letter' => 'required|string'
         ]);
 
-        $searchOutline = Day::select('letter', 'sign')->where('letter', $request->letter)->first();
+        $searchOutline = Day::with('SubDay')->where('letter', $request->letter)->first();
 
         if (!$searchOutline) {
             return response()->json([
@@ -120,6 +167,13 @@ class DayController extends Controller
         $responseData = [
             'word' => $searchOutline->letter,
             'sign' => $searchOutline->sign,
+            'sub_day'=> $searchOutline->SubDay->map(function ($sunday) {
+                return [
+                    'id' => $sunday->id,
+                    'title' => $sunday->title,
+                    'image' => $sunday->image,
+                ];
+            }),
         ];
 
         return response()->json([$responseData]);

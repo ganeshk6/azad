@@ -8,7 +8,7 @@ import { Head } from '@inertiajs/react';
 const Edit = ({ phrasesData }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [getPhrase, setPhrase] = useState(phrasesData);
-    const [wordSection, setWordSections] = useState(phrasesData.wordSections);
+    const [wordSection, setWordSections] = useState(phrasesData.SubCountry);
     const [imageFile, setImageFile] = useState(null);
 
     const handleImageChange = (e) => {
@@ -42,36 +42,17 @@ const Edit = ({ phrasesData }) => {
         );
     };
 
-    const handleSaveSignature = (id) => {
-        const signatureRef = signatureRefs.current[id];
-        if (!signatureRef) {
-            console.error(`Signature ref missing for ID: ${id}`);
-            return;
-        }
-    
-        const signatureImage = signatureRef.isEmpty()
-            ? wordSection.find((section) => section.id === id)?.signature 
-            : signatureRef.getTrimmedCanvas().toDataURL('image/png'); 
-    
-        const updatedSections = wordSection.map((section) => 
-            section.id === id && section.signature !== signatureImage 
-            ? { ...section, signature: signatureImage }
-            : section
-        );
-    
-        if (JSON.stringify(updatedSections) !== JSON.stringify(wordSection)) {
-            setWordSections(updatedSections);
+    const handleSubsectionImageChange = (id, e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setWordSections((sections) =>
+                sections.map((section) =>
+                    section.id === id ? { ...section, image: file } : section
+                )
+            );
         }
     };
-    
 
-    const handleClearSignature = (id) => {
-        const signatureRef = signatureRefs.current[id];
-        if (signatureRef) {
-            signatureRef.clear();
-        }
-    };
-    
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -82,13 +63,16 @@ const Edit = ({ phrasesData }) => {
             
             // Append regular data to FormData
             formData.append('letter', getPhrase.letter);
-            if (wordSection && wordSection.length > 0) {
-                formData.append('wordSections', JSON.stringify(wordSection));
-            }
             if (imageFile) {
                 formData.append('sign', imageFile); 
             }
-    
+            wordSection.forEach((section, index) => {
+                formData.append(`SubCountry[${index}][id]`, section.id);
+                formData.append(`SubCountry[${index}][title]`, section.title);
+                if (section.image instanceof File) {
+                    formData.append(`SubCountry[${index}][image]`, section.image);
+                }
+            });
             const response = await axios.post(route('countries-edit', getPhrase.id), formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
@@ -138,6 +122,94 @@ const Edit = ({ phrasesData }) => {
                                     accept="image/*"
                                     onChange={handleImageChange}
                                 />
+                            </div>
+                            <div>
+                                <div className='d-flex justify-between mb-3 align-items-center'>
+                                    <label className="form-label h5 fw-bold">Type Country</label>
+                                    <button
+                                        type="button"
+                                        className="p-2 rounded-0 bg-[green] text-[#fff] d-flex align-items-center"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#exampleModal"
+                                        onClick={handleAddSection}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-plus-lg text-white me-2" viewBox="0 0 16 16">
+                                            <path fillRule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+                                        </svg>
+                                        Add Sub Country
+                                    </button>
+                                </div>
+                                <div className="accordion" id="accordionExample">
+                                    {wordSection.map((section, index) => (
+                                        <div className="accordion-item" key={section.id}>
+                                            <h2 className="accordion-header d-flex" id={`heading-${section.id}`}>
+                                                <button
+                                                    className="accordion-button"
+                                                    type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target={`#collapse-${section.id}`}
+                                                    aria-expanded="false"
+                                                    aria-controls={`collapse-${section.id}`}
+                                                >
+                                                    {section.title ? section.title : 'Country Section'} {index + 1}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-danger rounded-0"
+                                                    onClick={() => handleRemoveSection(section.id)}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash3" viewBox="0 0 16 16">
+                                                        <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
+                                                    </svg>
+                                                </button>
+                                            </h2>
+                                            <div
+                                                id={`collapse-${section.id}`}
+                                                className="accordion-collapse collapse hide"
+                                                aria-labelledby={`heading-${section.id}`}
+                                                data-bs-parent="#accordionExample"
+                                            >
+                                                <div className="accordion-body">
+                                                    <div className="mb-3">
+                                                        <label htmlFor={`letter-${section.id}`} className="form-label">
+                                                            Title
+                                                        </label>
+                                                        <input
+                                                            id={`letter-${section.id}`}
+                                                            type="text"
+                                                            className="form-control rounded-1"
+                                                            placeholder="Enter word title"
+                                                            required
+                                                            value={section.title}
+                                                            onChange={(e) => handleChange(section.id, 'title', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div className="mb-3">
+                                                        <label htmlFor={`image-${section.id}`} className="form-label">
+                                                            image
+                                                        </label>
+                                                        {section.image && (
+                                                            <img
+                                                            src={typeof section.image === "string" ? section.image : URL.createObjectURL(section.image)}
+                                                            alt="Preview"
+                                                            className="my-3 w-50 h-100"
+                                                            style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                                                        />
+                                                        )}
+                                                        <input
+                                                            id={`image-${section.id}`}
+                                                            type="file"
+                                                            className="form-control rounded-1 border-2 p-2"
+                                                            accept="image/*"
+                                                            onChange={(e) => handleSubsectionImageChange(section.id, e)}
+                                                        />
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                         <div className="col-2">

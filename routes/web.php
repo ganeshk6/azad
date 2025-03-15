@@ -7,6 +7,9 @@ use App\Http\Controllers\PhrasesController;
 use App\Http\Controllers\WordWithPrepositionController;
 use App\Http\Controllers\FestivalController;
 use App\Http\Controllers\NumericalController;
+use App\Http\Controllers\CorrectSpellingController;
+use App\Http\Controllers\NoticeController;
+use App\Http\Controllers\UniqueOutlineController;
 use App\Http\Controllers\PlaceController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\PersonController;
@@ -197,6 +200,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/numerical/words', [NumericalController::class, 'getWords'])->name('numerical-getWords');
     Route::any('/numerical/edit/{id}', [NumericalController::class, 'edit'])->name('numerical-edit');
     Route::delete('/numerical/{id}', [NumericalController::class, 'destroy'])->name('numerical-delete');
+
+    // numerical outlines 
+    Route::any('/unique-outline', [UniqueOutlineController::class, 'uniqueOutline'])->name('unique-outline');
+    Route::get('/unique-outline/words', [UniqueOutlineController::class, 'getWords'])->name('unique-outline-getWords');
+    Route::any('/unique-outline/edit/{id}', [UniqueOutlineController::class, 'edit'])->name('unique-outline-edit');
+    Route::delete('/unique-outline/{id}', [UniqueOutlineController::class, 'destroy'])->name('unique-outline-delete');
+
+    // numerical outlines 
+    Route::any('/correct-spelling', [CorrectSpellingController::class, 'correctSpelling'])->name('correct-spelling');
+    Route::get('/correct-spelling/words', [CorrectSpellingController::class, 'getWords'])->name('correct-spelling-getWords');
+    Route::any('/correct-spelling/edit/{id}', [CorrectSpellingController::class, 'edit'])->name('correct-spelling-edit');
+    Route::delete('/correct-spelling/{id}', [CorrectSpellingController::class, 'destroy'])->name('correct-spelling-delete');
+
+    // numerical outlines 
+    Route::any('/notices', [NoticeController::class, 'notices'])->name('notices');
+    Route::get('/notices/words', [NoticeController::class, 'getWords'])->name('notices-getWords');
+    Route::any('/notices/edit/{id}', [NoticeController::class, 'edit'])->name('notices-edit');
+    Route::delete('/notices/{id}', [NoticeController::class, 'destroy'])->name('notices-delete');
 
 });
 

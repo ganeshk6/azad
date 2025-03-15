@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Month;
+use App\Models\SubMonth;
 use Inertia\Inertia;
 
 class MonthController extends Controller
@@ -45,7 +46,10 @@ class MonthController extends Controller
         if ($request->isMethod('post')) {
             $request->validate([
                 'letter' => 'required|string',
-                'sign' => 'nullable'
+                'sign' => 'nullable',
+                'SubMonth' => 'nullable|array',
+                'SubMonth.*.title' => 'nullable|string',
+                'SubMonth.*.image' => 'nullable|image',
             ]);
 
             $phrase = Month::findOrFail($id);
@@ -63,6 +67,36 @@ class MonthController extends Controller
 
             $phrase->save();
 
+            // Handle word sections
+            $incomingIds = collect($request->input('SubMonth'))->pluck('id')->filter()->toArray();
+            $existingIds = SubMonth::where('month_id', $phrase->id)->pluck('id')->toArray();
+            $idsToDelete = array_diff($existingIds, $incomingIds);
+            SubMonth::whereIn('id', $idsToDelete)->delete();
+
+            foreach ($request->input('SubMonth') as $index => $section) {
+                $word = SubMonth::updateOrCreate(
+                    ['id' => $section['id'] ?? null],
+                    [
+                        'month_id' => $phrase->id,
+                        'language_id' => $phrase->language_id,
+                        'title' => $section['title'],
+                    ]
+                );
+
+                // Handle signature upload
+                if ($request->hasFile("SubMonth.{$index}.image")) {
+                    $file = $request->file("SubMonth.{$index}.image");
+                    // echo"<pre>";print_r($file);die;
+                    $fileName = "{$word->id}_subday." . $file->getClientOriginalExtension();
+                    $filePath = "images/SubMonth/{$fileName}";
+
+                    // Store file
+                    $file->storeAs('images/SubMonth', $fileName, 'public');
+                    $word->image = "/{$filePath}";
+                    $word->save();
+                }
+            }
+
             return redirect()->route('months-edit', ['id' => $phrase->id])
                 ->with('success', 'Month updated successfully!');
         }
@@ -74,6 +108,13 @@ class MonthController extends Controller
                 'id' => $phrase->id,
                 'letter' => $phrase->letter,
                 'sign' => $phrase->sign,
+                'SubMonth' => $phrase->SubMonth->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
             ],
         ]);
     }
@@ -89,13 +130,20 @@ class MonthController extends Controller
 
     public function getApi($id)
     {
-        $dictation = Month::where('language_id', $id)->orderBy('letter', 'asc')->get();
+        $dictation = Month::with('SubMonth')->where('language_id', $id)->orderBy('letter', 'asc')->get();
 
         $dictationData = $dictation->map(function ($item) {
             return [
                 // 'id' => $item->id,
                 'word'=> $item->letter,
                 'sign'=> $item->sign,
+                'sub_month'=> $item->SubMonth->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
                 // 'outline_search' => $item->OutlineSearch->select('notes')
             ];
         });
@@ -109,7 +157,7 @@ class MonthController extends Controller
             'letter' => 'required|string'
         ]);
 
-        $searchOutline = Month::select('letter', 'sign')->where('letter', $request->letter)->first();
+        $searchOutline = Month::with('SubMonth')->where('letter', $request->letter)->first();
 
         if (!$searchOutline) {
             return response()->json([
@@ -120,6 +168,13 @@ class MonthController extends Controller
         $responseData = [
             'word' => $searchOutline->letter,
             'sign' => $searchOutline->sign,
+            'sub_day'=> $searchOutline->SubMonth->map(function ($sunday) {
+                return [
+                    'id' => $sunday->id,
+                    'title' => $sunday->title,
+                    'image' => $sunday->image,
+                ];
+            }),
         ];
 
         return response()->json([$responseData]);

@@ -138,12 +138,12 @@ export default function AuthenticatedLayout({ children }) {
                     >
                         Countries
                     </NavLink>
-                    <NavLink
+                    {/* <NavLink
                         href={route('country-foreign')}
                         active={route().current('country-foreign') || route().current('country-foreign-edit')}
                     >
                         Country & foreign 
-                    </NavLink>
+                    </NavLink> */}
                     <NavLink
                         href={route('parties')}
                         active={route().current('parties') || route().current('parties-edit')}
@@ -190,7 +190,7 @@ export default function AuthenticatedLayout({ children }) {
                         href={route('foreign-contries')}
                         active={route().current('foreign-contries') || route().current('foreign-contries-edit')}
                     >
-                        Foreign countries
+                        Country & foreign
                     </NavLink>
                     <NavLink
                         href={route('persons')}
@@ -215,6 +215,24 @@ export default function AuthenticatedLayout({ children }) {
                         active={route().current('numerical') || route().current('numerical-edit')}
                     >
                         Numerical
+                    </NavLink>
+                    <NavLink
+                        href={route('unique-outline')}
+                        active={route().current('unique-outline') || route().current('unique-outline-edit')}
+                    >
+                        Unique Outline
+                    </NavLink>
+                    <NavLink
+                        href={route('correct-spelling')}
+                        active={route().current('correct-spelling') || route().current('correct-spelling-edit')}
+                    >
+                        Correct Spelling
+                    </NavLink>
+                    <NavLink
+                        href={route('notices')}
+                        active={route().current('notices') || route().current('notices-edit')}
+                    >
+                        Notices
                     </NavLink>
 
                 </div>

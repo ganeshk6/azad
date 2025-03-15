@@ -5,12 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\HasImage;
 
-class Day extends Model
+class SubDay extends Model
 {
     use HasImage;
-    
-    public function SubDay()
-    {
-        return $this->hasMany(SubDay::class);
-    }
+    protected $fillable = ['day_id', 'title', 'image', 'language_id'];
+
 }
