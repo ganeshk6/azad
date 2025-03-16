@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\DictionaryController;
+use App\Http\Controllers\VerbController;
 use App\Http\Controllers\PhrasesController;
 use App\Http\Controllers\WordWithPrepositionController;
 use App\Http\Controllers\FestivalController;
@@ -218,6 +219,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/notices/words', [NoticeController::class, 'getWords'])->name('notices-getWords');
     Route::any('/notices/edit/{id}', [NoticeController::class, 'edit'])->name('notices-edit');
     Route::delete('/notices/{id}', [NoticeController::class, 'destroy'])->name('notices-delete');
+
+    // numerical outlines 
+    Route::any('/verb', [VerbController::class, 'verb'])->name('verb');
+    Route::get('/verb/words', [VerbController::class, 'getWords'])->name('verb-getWords');
+    Route::any('/verb/edit/{id}', [VerbController::class, 'edit'])->name('verb-edit');
+    Route::delete('/verb/{id}', [VerbController::class, 'destroy'])->name('verb-delete');
 
 });
 

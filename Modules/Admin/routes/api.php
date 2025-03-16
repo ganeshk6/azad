@@ -29,6 +29,7 @@ use App\Http\Controllers\NumericalController;
 use App\Http\Controllers\UniqueOutlineController;
 use App\Http\Controllers\CorrectSpellingController;
 use App\Http\Controllers\NoticeController;
+use App\Http\Controllers\VerbController;
 
 use App\Http\Controllers\Customer\AuthController;
 
@@ -149,3 +150,6 @@ Route::post('/correct-spelling-by', [CorrectSpellingController::class, 'searchAp
 
 Route::get('/notices/language_{id}', [NoticeController::class, 'getApi']);
 Route::post('/notices-by', [NoticeController::class, 'searchApi']);
+
+Route::get('/verb/language_{id}', [VerbController::class, 'getApi']);
+Route::post('/verb-by', [VerbController::class, 'searchApi']);

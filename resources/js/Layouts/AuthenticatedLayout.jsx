@@ -234,6 +234,13 @@ export default function AuthenticatedLayout({ children }) {
                     >
                         Notices
                     </NavLink>
+                    <NavLink
+                        href={route('verb')}
+                        active={route().current('verb') || route().current('verb-edit')}
+                    >
+                        Verb
+                    </NavLink>
+
 
                 </div>
             </aside>
