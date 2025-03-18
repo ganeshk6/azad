@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Notice;
+use App\Models\SubNotice;
 use Inertia\Inertia;
 
 class NoticeController extends Controller
@@ -63,6 +64,36 @@ class NoticeController extends Controller
 
             $phrase->save();
 
+            // Handle word sections
+            $incomingIds = collect($request->input('SubNotice'))->pluck('id')->filter()->toArray();
+            $existingIds = SubNotice::where('notice_id', $phrase->id)->pluck('id')->toArray();
+            $idsToDelete = array_diff($existingIds, $incomingIds);
+            SubNotice::whereIn('id', $idsToDelete)->delete();
+
+            foreach ($request->input('SubNotice') as $index => $section) {
+                $word = SubNotice::updateOrCreate(
+                    ['id' => $section['id'] ?? null],
+                    [
+                        'notice_id' => $phrase->id,
+                        'language_id' => $phrase->language_id,
+                        'title' => $section['title'],
+                    ]
+                );
+
+                // Handle signature upload
+                if ($request->hasFile("SubNotice.{$index}.image")) {
+                    $file = $request->file("SubNotice.{$index}.image");
+                    // echo"<pre>";print_r($file);die;
+                    $fileName = "{$word->id}_sub_notice." . $file->getClientOriginalExtension();
+                    $filePath = "images/SubNotice/{$fileName}";
+
+                    // Store file
+                    $file->storeAs('images/SubNotice', $fileName, 'public');
+                    $word->image = "/{$filePath}";
+                    $word->save();
+                }
+            }// Handle word sections
+
             return redirect()->route('notices-edit', ['id' => $phrase->id])
                 ->with('success', 'Notice updated successfully!');
         }
@@ -74,6 +105,13 @@ class NoticeController extends Controller
                 'id' => $phrase->id,
                 'letter' => $phrase->letter,
                 'sign' => $phrase->sign,
+                'SubNotice' => $phrase->SubNotice->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
             ],
         ]);
     }
@@ -96,6 +134,13 @@ class NoticeController extends Controller
                 // 'id' => $item->id,
                 'word'=> $item->letter,
                 'sign'=> $item->sign,
+                'sub_notice' => $item->SubNotice->map(function ($sunday) {
+                    return [
+                        'id' => $sunday->id,
+                        'title' => $sunday->title,
+                        'image' => $sunday->image,
+                    ];
+                }),
                 // 'outline_search' => $item->OutlineSearch->select('notes')
             ];
         });
@@ -120,6 +165,13 @@ class NoticeController extends Controller
         $responseData = [
             'word' => $searchOutline->letter,
             'sign' => $searchOutline->sign,
+            'sub_notice' => $searchOutline->SubNotice->map(function ($sunday) {
+                return [
+                    'id' => $sunday->id,
+                    'title' => $sunday->title,
+                    'image' => $sunday->image,
+                ];
+            }),
         ];
 
         return response()->json([$responseData]);
